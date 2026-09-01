@@ -24,12 +24,14 @@ class ChartScreen extends StatelessWidget {
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textMuted,
-            tabs: [Tab(text: 'Harian'), Tab(text: 'Bulanan'), Tab(text: 'Tahunan')],
+            tabs: [
+              Tab(text: 'Harian'),
+              Tab(text: 'Bulanan'),
+              Tab(text: 'Tahunan'),
+            ],
           ),
         ),
-        body: const TabBarView(
-          children: [_DailyTab(), _MonthlyTab(), _YearlyTab()],
-        ),
+        body: const TabBarView(children: [_DailyTab(), _MonthlyTab(), _YearlyTab()]),
       ),
     );
   }
@@ -125,8 +127,7 @@ class _YearlyTab extends ConsumerWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left),
-              onPressed: () =>
-                  ref.read(selectedYearProvider.notifier).state = year - 1,
+              onPressed: () => ref.read(selectedYearProvider.notifier).state = year - 1,
             ),
             SizedBox(
               width: 90,
@@ -138,8 +139,7 @@ class _YearlyTab extends ConsumerWidget {
             ),
             IconButton(
               icon: const Icon(Icons.chevron_right),
-              onPressed: () =>
-                  ref.read(selectedYearProvider.notifier).state = year + 1,
+              onPressed: () => ref.read(selectedYearProvider.notifier).state = year + 1,
             ),
           ],
         ),
@@ -256,11 +256,7 @@ class _TotalCard extends StatelessWidget {
             CurrencyFormatter.format(amount),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: color),
           ),
         ],
       ),

@@ -26,10 +26,7 @@ class AuthRepository {
     return _persist(result);
   }
 
-  Future<AuthResult> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<AuthResult> login({required String email, required String password}) async {
     final result = await _api.send(
       () => _api.dio.post(
         ApiConstants.login,
@@ -51,10 +48,7 @@ class AuthRepository {
     final refreshToken = await _storage.readRefreshToken();
     if (refreshToken != null) {
       try {
-        await _api.dio.delete(
-          ApiConstants.logout,
-          data: {'refreshToken': refreshToken},
-        );
+        await _api.dio.delete(ApiConstants.logout, data: {'refreshToken': refreshToken});
       } catch (_) {
         // Server nggak kejangkau bukan alasan buat nahan user tetap login.
       }
@@ -72,5 +66,4 @@ class AuthRepository {
   }
 
   static final _noAuth = Options(extra: const {'skipAuth': true});
-
 }

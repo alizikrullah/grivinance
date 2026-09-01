@@ -8,8 +8,7 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   return CategoryRepository(ref.watch(apiServiceProvider));
 });
 
-final categoriesProvider =
-    AsyncNotifierProvider<CategoriesNotifier, List<CategoryModel>>(
+final categoriesProvider = AsyncNotifierProvider<CategoriesNotifier, List<CategoryModel>>(
   CategoriesNotifier.new,
 );
 
@@ -52,8 +51,10 @@ class CategoriesNotifier extends AsyncNotifier<List<CategoryModel>> {
 
 /// Kategori yang sudah disaring per tipe — form transaksi cuma boleh nawarin
 /// kategori yang tipenya cocok, karena backend nolak yang nggak cocok (422).
-final categoriesByTypeProvider =
-    Provider.family<List<CategoryModel>, TxType>((ref, type) {
+final categoriesByTypeProvider = Provider.family<List<CategoryModel>, TxType>((
+  ref,
+  type,
+) {
   final all = ref.watch(categoriesProvider).value ?? const [];
   return all.where((c) => c.type == type).toList();
 });

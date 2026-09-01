@@ -16,11 +16,11 @@ class TxRef {
   final String color;
 
   factory TxRef.fromJson(Map<String, dynamic> json) => TxRef(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        icon: json['icon'] as String,
-        color: json['color'] as String,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    icon: json['icon'] as String,
+    color: json['color'] as String,
+  );
 }
 
 class TransactionModel {
@@ -49,16 +49,16 @@ class TransactionModel {
   bool get isIncome => type == TxType.income;
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) => TransactionModel(
-        id: json['id'] as String,
-        walletId: json['walletId'] as String,
-        categoryId: json['categoryId'] as String,
-        type: TxType.fromApi(json['type'] as String),
-        amount: double.parse(json['amount'] as String),
-        date: DateTime.parse(json['date'] as String),
-        note: json['note'] as String?,
-        wallet: TxRef.fromJson(json['wallet'] as Map<String, dynamic>),
-        category: TxRef.fromJson(json['category'] as Map<String, dynamic>),
-      );
+    id: json['id'] as String,
+    walletId: json['walletId'] as String,
+    categoryId: json['categoryId'] as String,
+    type: TxType.fromApi(json['type'] as String),
+    amount: double.parse(json['amount'] as String),
+    date: DateTime.parse(json['date'] as String),
+    note: json['note'] as String?,
+    wallet: TxRef.fromJson(json['wallet'] as Map<String, dynamic>),
+    category: TxRef.fromJson(json['category'] as Map<String, dynamic>),
+  );
 }
 
 class TransactionPage {

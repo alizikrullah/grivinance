@@ -12,11 +12,11 @@ class UserModel {
   final DateTime createdAt;
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-        id: json['id'] as String,
-        email: json['email'] as String,
-        name: json['name'] as String,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-      );
+    id: json['id'] as String,
+    email: json['email'] as String,
+    name: json['name'] as String,
+    createdAt: DateTime.parse(json['createdAt'] as String),
+  );
 }
 
 /// Hasil login/register: user + sepasang token.
@@ -32,8 +32,8 @@ class AuthResult {
   final String refreshToken;
 
   factory AuthResult.fromJson(Map<String, dynamic> json) => AuthResult(
-        user: UserModel.fromJson(json['user'] as Map<String, dynamic>),
-        accessToken: json['accessToken'] as String,
-        refreshToken: json['refreshToken'] as String,
-      );
+    user: UserModel.fromJson(json['user'] as Map<String, dynamic>),
+    accessToken: json['accessToken'] as String,
+    refreshToken: json['refreshToken'] as String,
+  );
 }

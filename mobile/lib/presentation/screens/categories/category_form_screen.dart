@@ -89,9 +89,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hapus kategori?'),
-        content: const Text(
-          'Kategori yang masih dipakai transaksi tidak bisa dihapus.',
-        ),
+        content: const Text('Kategori yang masih dipakai transaksi tidak bisa dihapus.'),
         actions: [
           TextButton(onPressed: () => context.pop(false), child: const Text('Batal')),
           TextButton(
@@ -186,6 +184,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
               IconPickerField(
                 selected: _icon,
                 color: color,
+                icons: AppIcons.forCategory,
                 onChanged: (value) => setState(() => _icon = value),
               ),
               const SizedBox(height: 18),

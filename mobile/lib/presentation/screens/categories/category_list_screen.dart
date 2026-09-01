@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/category_model.dart';
 import '../../../providers/category_provider.dart';
 import '../../widgets/common/grivi_async_view.dart';
+import '../../widgets/common/grivi_icon_badge.dart';
 
 class CategoryListScreen extends ConsumerWidget {
   const CategoryListScreen({super.key});
@@ -25,7 +26,10 @@ class CategoryListScreen extends ConsumerWidget {
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textMuted,
-            tabs: [Tab(text: 'Pengeluaran'), Tab(text: 'Pemasukan')],
+            tabs: [
+              Tab(text: 'Pengeluaran'),
+              Tab(text: 'Pemasukan'),
+            ],
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
@@ -86,15 +90,7 @@ class _CategoryTab extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
               child: Row(
                 children: [
-                  Container(
-                    height: 40,
-                    width: 40,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(AppIcons.resolve(category.icon), size: 20, color: color),
-                  ),
+                  GriviIconBadge(icon: AppIcons.resolve(category.icon), color: color),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

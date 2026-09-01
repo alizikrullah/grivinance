@@ -120,8 +120,8 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                     }
 
                     final tx = data[index];
-                    final showHeader = index == 0 ||
-                        !_sameDay(data[index - 1].date, tx.date);
+                    final showHeader =
+                        index == 0 || !_sameDay(data[index - 1].date, tx.date);
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,8 +146,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                           margin: const EdgeInsets.only(bottom: 8),
                           child: TransactionItem(
                             transaction: tx,
-                            onTap: () =>
-                                context.push(AppRoutes.transactionDetail(tx.id)),
+                            onTap: () => context.push(AppRoutes.transactionDetail(tx.id)),
                           ),
                         ),
                       ],
@@ -281,7 +280,7 @@ class _FilterSheet extends ConsumerWidget {
                       filter.startDate == null
                           ? 'Semua tanggal'
                           : '${DateFormatter.short(filter.startDate!)} — '
-                              '${DateFormatter.short(filter.endDate ?? filter.startDate!)}',
+                                '${DateFormatter.short(filter.endDate ?? filter.startDate!)}',
                       overflow: TextOverflow.ellipsis,
                     ),
                     onPressed: () async {
@@ -289,16 +288,13 @@ class _FilterSheet extends ConsumerWidget {
                         context: context,
                         firstDate: DateTime(2020),
                         lastDate: DateTime(2100),
-                        builder: (context, child) => Theme(
-                          data: Theme.of(context),
-                          child: child!,
-                        ),
+                        builder: (context, child) =>
+                            Theme(data: Theme.of(context), child: child!),
                       );
                       if (range != null) {
-                        update(filter.copyWith(
-                          startDate: range.start,
-                          endDate: range.end,
-                        ));
+                        update(
+                          filter.copyWith(startDate: range.start, endDate: range.end),
+                        );
                       }
                     },
                   ),

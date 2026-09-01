@@ -129,7 +129,10 @@ class ApiService {
     final body = response.data;
 
     if (body is! Map<String, dynamic>) {
-      throw ApiException('Respons server tidak dikenali', statusCode: response.statusCode);
+      throw ApiException(
+        'Respons server tidak dikenali',
+        statusCode: response.statusCode,
+      );
     }
 
     if (body['success'] == true) return body['data'];

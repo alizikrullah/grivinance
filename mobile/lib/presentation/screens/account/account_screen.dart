@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
+import '../../widgets/common/grivi_icon_badge.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -52,10 +53,7 @@ class AccountScreen extends ConsumerWidget {
                     children: [
                       Text(
                         user?.name ?? '-',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                       Text(
                         user?.email ?? '',
@@ -148,15 +146,7 @@ class _MenuTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: [
-              Container(
-                height: 40,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, size: 20, color: color),
-              ),
+              GriviIconBadge(icon: icon, color: color),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -180,8 +170,7 @@ class _MenuTile extends StatelessWidget {
                   ],
                 ),
               ),
-              if (!danger)
-                const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              if (!danger) const Icon(Icons.chevron_right, color: AppColors.textMuted),
             ],
           ),
         ),

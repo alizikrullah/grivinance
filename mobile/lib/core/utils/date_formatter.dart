@@ -11,8 +11,18 @@ class DateFormatter {
   static final DateFormat _isoDate = DateFormat('yyyy-MM-dd');
 
   static const List<String> monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mei',
+    'Jun',
+    'Jul',
+    'Agu',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Des',
   ];
 
   /// "1 September 2026"

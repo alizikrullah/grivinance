@@ -46,12 +46,7 @@ class WalletRepository {
     final data = await _api.send(
       () => _api.dio.put(
         ApiConstants.wallet(id),
-        data: {
-          'name': name,
-          'type': type.apiValue,
-          'icon': icon,
-          'color': color,
-        },
+        data: {'name': name, 'type': type.apiValue, 'icon': icon, 'color': color},
       ),
     );
     return WalletModel.fromJson(data as Map<String, dynamic>);

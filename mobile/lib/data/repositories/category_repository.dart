@@ -24,12 +24,7 @@ class CategoryRepository {
     final data = await _api.send(
       () => _api.dio.post(
         ApiConstants.categories,
-        data: {
-          'name': name,
-          'type': type.apiValue,
-          'icon': icon,
-          'color': color,
-        },
+        data: {'name': name, 'type': type.apiValue, 'icon': icon, 'color': color},
       ),
     );
     return CategoryModel.fromJson(data as Map<String, dynamic>);
@@ -45,12 +40,7 @@ class CategoryRepository {
     final data = await _api.send(
       () => _api.dio.put(
         ApiConstants.category(id),
-        data: {
-          'name': name,
-          'type': type.apiValue,
-          'icon': icon,
-          'color': color,
-        },
+        data: {'name': name, 'type': type.apiValue, 'icon': icon, 'color': color},
       ),
     );
     return CategoryModel.fromJson(data as Map<String, dynamic>);

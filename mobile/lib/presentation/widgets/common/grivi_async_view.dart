@@ -31,9 +31,8 @@ class GriviAsyncView<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return value.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      ),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       error: (error, _) => GriviErrorView(message: '$error', onRetry: onRetry),
       data: (data) {
         if (isEmpty?.call(data) ?? false) {
@@ -124,7 +123,10 @@ class GriviEmptyView extends StatelessWidget {
               child: Icon(icon, size: 38, color: AppColors.textMuted),
             ),
             const SizedBox(height: 18),
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
             if (message != null) ...[
               const SizedBox(height: 6),
               Text(

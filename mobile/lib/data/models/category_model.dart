@@ -31,11 +31,11 @@ class CategoryModel {
   final bool isPreset;
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) => CategoryModel(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        icon: json['icon'] as String,
-        color: json['color'] as String,
-        type: TxType.fromApi(json['type'] as String),
-        isPreset: json['userId'] == null,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    icon: json['icon'] as String,
+    color: json['color'] as String,
+    type: TxType.fromApi(json['type'] as String),
+    isPreset: json['userId'] == null,
+  );
 }

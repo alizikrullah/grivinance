@@ -8,8 +8,9 @@ final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   return WalletRepository(ref.watch(apiServiceProvider));
 });
 
-final walletsProvider =
-    AsyncNotifierProvider<WalletsNotifier, List<WalletModel>>(WalletsNotifier.new);
+final walletsProvider = AsyncNotifierProvider<WalletsNotifier, List<WalletModel>>(
+  WalletsNotifier.new,
+);
 
 class WalletsNotifier extends AsyncNotifier<List<WalletModel>> {
   WalletRepository get _repository => ref.read(walletRepositoryProvider);

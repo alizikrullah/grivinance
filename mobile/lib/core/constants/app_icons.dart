@@ -58,8 +58,28 @@ class AppIcons {
 
   static IconData resolve(String? name) => _map[name] ?? fallback;
 
-  /// Dipakai icon picker di form wallet & kategori.
-  static List<String> get pickable => _map.keys.toList();
+  /// Picker wallet cuma nawarin icon yang masuk akal buat dompet dan rekening.
+  /// Sebelumnya satu daftar dipakai bersama, jadi buat milih icon "Tunai" user
+  /// harus scroll lewat garpu-sendok, mobil, dan wifi dulu.
+  static const List<String> forWallet = [
+    'account_balance_wallet',
+    'account_balance',
+    'wallet',
+    'payments',
+    'credit_card',
+    'savings',
+    'attach_money',
+    'currency_exchange',
+    'phone_android',
+    'store',
+    'redeem',
+    'more_horiz',
+  ];
+
+  /// Sisanya buat kategori — semua icon kecuali yang khusus wallet.
+  static List<String> get forCategory => _map.keys
+      .where((name) => !forWallet.contains(name) || name == 'more_horiz')
+      .toList();
 }
 
 /// Warna dari API datang sebagai "#RRGGBB".
@@ -70,7 +90,8 @@ Color hexToColor(String hex) {
 }
 
 String colorToHex(Color color) {
-  final value = ((color.a * 255).round() << 24) |
+  final value =
+      ((color.a * 255).round() << 24) |
       ((color.r * 255).round() << 16) |
       ((color.g * 255).round() << 8) |
       (color.b * 255).round();
@@ -79,8 +100,20 @@ String colorToHex(Color color) {
 
 /// Palet siap pakai buat color picker.
 const List<String> pickableColors = [
-  '#10B981', '#3B82F6', '#A855F7', '#F97316',
-  '#EF4444', '#EAB308', '#06B6D4', '#EC4899',
-  '#8B5CF6', '#14B8A6', '#F43F5E', '#22C55E',
-  '#6366F1', '#F59E0B', '#6B7280', '#84CC16',
+  '#10B981',
+  '#3B82F6',
+  '#A855F7',
+  '#F97316',
+  '#EF4444',
+  '#EAB308',
+  '#06B6D4',
+  '#EC4899',
+  '#8B5CF6',
+  '#14B8A6',
+  '#F43F5E',
+  '#22C55E',
+  '#6366F1',
+  '#F59E0B',
+  '#6B7280',
+  '#84CC16',
 ];

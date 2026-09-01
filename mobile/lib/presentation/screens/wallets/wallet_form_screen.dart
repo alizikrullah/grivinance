@@ -101,10 +101,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
           'dikembalikan.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => context.pop(false),
-            child: const Text('Batal'),
-          ),
+          TextButton(onPressed: () => context.pop(false), child: const Text('Batal')),
           TextButton(
             onPressed: () => context.pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.expense),
@@ -207,6 +204,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               IconPickerField(
                 selected: _icon,
                 color: color,
+                icons: AppIcons.forWallet,
                 onChanged: (value) => setState(() => _icon = value),
               ),
               const SizedBox(height: 18),

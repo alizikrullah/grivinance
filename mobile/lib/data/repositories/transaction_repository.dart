@@ -26,8 +26,7 @@ class TransactionRepository {
           // Backend menafsirkan tanggal ini sebagai batas hari WIB.
           if (filter.startDate != null)
             'startDate': DateFormatter.isoDate(filter.startDate!),
-          if (filter.endDate != null)
-            'endDate': DateFormatter.isoDate(filter.endDate!),
+          if (filter.endDate != null) 'endDate': DateFormatter.isoDate(filter.endDate!),
         },
       ),
     );

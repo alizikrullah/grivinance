@@ -54,10 +54,8 @@ class YearlyBarChartWidget extends StatelessWidget {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                getDrawingHorizontalLine: (_) => const FlLine(
-                  color: AppColors.surfaceVariant,
-                  strokeWidth: 1,
-                ),
+                getDrawingHorizontalLine: (_) =>
+                    const FlLine(color: AppColors.surfaceVariant, strokeWidth: 1),
               ),
               borderData: FlBorderData(show: false),
               titlesData: FlTitlesData(
@@ -69,10 +67,7 @@ class YearlyBarChartWidget extends StatelessWidget {
                     reservedSize: 46,
                     getTitlesWidget: (value, _) => Text(
                       _compact(value),
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 10,
-                      ),
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
                     ),
                   ),
                 ),
@@ -106,17 +101,13 @@ class YearlyBarChartWidget extends StatelessWidget {
                       toY: month.income,
                       color: AppColors.income,
                       width: 7,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(3),
-                      ),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
                     ),
                     BarChartRodData(
                       toY: month.expense,
                       color: AppColors.expense,
                       width: 7,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(3),
-                      ),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
                     ),
                   ],
                 );

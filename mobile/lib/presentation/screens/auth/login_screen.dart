@@ -40,10 +40,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      await ref.read(authProvider.notifier).login(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+      await ref
+          .read(authProvider.notifier)
+          .login(email: _emailController.text.trim(), password: _passwordController.text);
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     } finally {
@@ -69,9 +68,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 40),
                     Text(
                       'Masuk',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 6),
                     const Text(
@@ -162,13 +160,10 @@ class _Logo extends StatelessWidget {
         const SizedBox(height: 14),
         Text(
           'Grivinance',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.5),
         ),
       ],
     );
   }
 }
-

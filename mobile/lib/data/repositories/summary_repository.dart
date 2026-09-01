@@ -31,10 +31,7 @@ class SummaryRepository {
 
   Future<YearlySummary> yearly(int year) async {
     final data = await _api.send(
-      () => _api.dio.get(
-        ApiConstants.summaryYearly,
-        queryParameters: {'year': year},
-      ),
+      () => _api.dio.get(ApiConstants.summaryYearly, queryParameters: {'year': year}),
     );
     return YearlySummary.fromJson(data as Map<String, dynamic>);
   }

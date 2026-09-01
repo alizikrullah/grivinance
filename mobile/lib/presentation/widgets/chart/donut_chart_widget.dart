@@ -5,6 +5,7 @@ import '../../../core/constants/app_icons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/models/summary_model.dart';
+import '../common/grivi_icon_badge.dart';
 
 /// Donut pengeluaran per kategori + legend di bawahnya.
 class DonutChartWidget extends StatelessWidget {
@@ -59,10 +60,7 @@ class DonutChartWidget extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     CurrencyFormatter.format(total),
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -76,18 +74,11 @@ class DonutChartWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
-                Container(
-                  height: 30,
-                  width: 30,
-                  decoration: BoxDecoration(
-                    color: hexToColor(item.color).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: Icon(
-                    AppIcons.resolve(item.icon),
-                    size: 15,
-                    color: hexToColor(item.color),
-                  ),
+                GriviIconBadge(
+                  icon: AppIcons.resolve(item.icon),
+                  color: hexToColor(item.color),
+                  size: 30,
+                  radius: 9,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -100,18 +91,12 @@ class DonutChartWidget extends StatelessWidget {
                 ),
                 Text(
                   '${percent.toStringAsFixed(1)}%',
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 12.5,
-                  ),
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   CurrencyFormatter.format(item.total),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13.5,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
                 ),
               ],
             ),

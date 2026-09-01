@@ -12,15 +12,16 @@ final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
 });
 
 /// Filter aktif di layar daftar transaksi.
-final transactionFilterProvider =
-    StateProvider<TransactionFilter>((ref) => const TransactionFilter());
+final transactionFilterProvider = StateProvider<TransactionFilter>(
+  (ref) => const TransactionFilter(),
+);
 
 /// Daftar transaksi dengan infinite scroll. Filter ikut di-watch, jadi ganti
 /// filter otomatis muat ulang dari halaman 1.
 final transactionsProvider =
     AsyncNotifierProvider<TransactionsNotifier, List<TransactionModel>>(
-  TransactionsNotifier.new,
-);
+      TransactionsNotifier.new,
+    );
 
 class TransactionsNotifier extends AsyncNotifier<List<TransactionModel>> {
   static const int _pageSize = 20;
@@ -137,7 +138,9 @@ final recentTransactionsProvider = FutureProvider<List<TransactionModel>>((ref) 
   return page.items;
 });
 
-final transactionDetailProvider =
-    FutureProvider.family<TransactionModel, String>((ref, id) {
+final transactionDetailProvider = FutureProvider.family<TransactionModel, String>((
+  ref,
+  id,
+) {
   return ref.watch(transactionRepositoryProvider).detail(id);
 });

@@ -41,10 +41,8 @@ class AppTheme {
         error: AppColors.expense,
         onError: AppColors.textPrimary,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
-        bodyColor: AppColors.textPrimary,
-        displayColor: AppColors.textPrimary,
-      ),
+      textTheme: GoogleFonts.interTextTheme(base.textTheme)
+          .apply(bodyColor: AppColors.textPrimary, displayColor: AppColors.textPrimary),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
@@ -109,7 +107,7 @@ class AppTheme {
   }
 
   static OutlineInputBorder _inputBorder(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: color, width: 1.5),
-      );
+    borderRadius: BorderRadius.circular(14),
+    borderSide: BorderSide(color: color, width: 1.5),
+  );
 }

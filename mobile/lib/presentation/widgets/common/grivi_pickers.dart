@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_icons.dart';
 import '../../../core/theme/app_theme.dart';
+import 'grivi_icon_badge.dart';
 
 /// Dipakai bareng form wallet dan form kategori.
 class IconPickerField extends StatelessWidget {
@@ -10,11 +11,15 @@ class IconPickerField extends StatelessWidget {
     required this.selected,
     required this.onChanged,
     required this.color,
+    required this.icons,
   });
 
   final String selected;
   final ValueChanged<String> onChanged;
   final Color color;
+
+  /// Daftar icon yang boleh dipilih — beda antara wallet dan kategori.
+  final List<String> icons;
 
   @override
   Widget build(BuildContext context) {
@@ -37,26 +42,26 @@ class IconPickerField extends StatelessWidget {
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
               ),
-              itemCount: AppIcons.pickable.length,
+              itemCount: icons.length,
               itemBuilder: (context, index) {
-                final name = AppIcons.pickable[index];
+                final name = icons[index];
                 final isSelected = name == selected;
                 return InkWell(
                   onTap: () => onChanged(name),
                   borderRadius: BorderRadius.circular(10),
+                  // Yang terpilih dirender persis seperti nanti tampil di kartu,
+                  // jadi user lihat hasil jadinya sebelum menyimpan.
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isSelected ? color.withValues(alpha: 0.22) : AppColors.surface,
+                      color: isSelected ? color : AppColors.surface,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected ? color : Colors.transparent,
-                        width: 1.5,
-                      ),
                     ),
                     child: Icon(
                       AppIcons.resolve(name),
                       size: 20,
-                      color: isSelected ? color : AppColors.textSecondary,
+                      color: isSelected
+                          ? GriviIconBadge.inkFor(color)
+                          : AppColors.textSecondary,
                     ),
                   ),
                 );
@@ -70,11 +75,7 @@ class IconPickerField extends StatelessWidget {
 }
 
 class ColorPickerField extends StatelessWidget {
-  const ColorPickerField({
-    super.key,
-    required this.selected,
-    required this.onChanged,
-  });
+  const ColorPickerField({super.key, required this.selected, required this.onChanged});
 
   final String selected;
   final ValueChanged<String> onChanged;

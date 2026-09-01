@@ -53,8 +53,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       final loggedIn = auth.value != null;
-      final onAuthScreen =
-          location == AppRoutes.login || location == AppRoutes.register;
+      final onAuthScreen = location == AppRoutes.login || location == AppRoutes.register;
 
       if (!loggedIn) return onAuthScreen ? null : AppRoutes.login;
       if (onAuthScreen || location == AppRoutes.splash) return AppRoutes.home;
@@ -74,10 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       GoRoute(path: AppRoutes.categories, builder: (_, _) => const CategoryListScreen()),
-      GoRoute(
-        path: AppRoutes.categoryNew,
-        builder: (_, _) => const CategoryFormScreen(),
-      ),
+      GoRoute(path: AppRoutes.categoryNew, builder: (_, _) => const CategoryFormScreen()),
       GoRoute(
         path: '/categories/:id/edit',
         builder: (_, state) => CategoryFormScreen(categoryId: state.pathParameters['id']),

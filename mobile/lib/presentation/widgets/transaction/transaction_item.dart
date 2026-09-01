@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../data/models/transaction_model.dart';
+import '../common/grivi_icon_badge.dart';
 
 class TransactionItem extends StatelessWidget {
   const TransactionItem({super.key, required this.transaction, this.onTap});
@@ -25,18 +26,10 @@ class TransactionItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
           children: [
-            Container(
-              height: 42,
-              width: 42,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                AppIcons.resolve(transaction.category.icon),
-                size: 21,
-                color: color,
-              ),
+            GriviIconBadge(
+              icon: AppIcons.resolve(transaction.category.icon),
+              color: color,
+              size: 42,
             ),
             const SizedBox(width: 12),
             Expanded(

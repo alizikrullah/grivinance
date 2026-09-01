@@ -4,14 +4,10 @@ import '../../../core/constants/app_icons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/models/wallet_model.dart';
+import '../common/grivi_icon_badge.dart';
 
 class WalletCard extends StatelessWidget {
-  const WalletCard({
-    super.key,
-    required this.wallet,
-    this.onTap,
-    this.width,
-  });
+  const WalletCard({super.key, required this.wallet, this.onTap, this.width});
 
   final WalletModel wallet;
   final VoidCallback? onTap;
@@ -38,14 +34,11 @@ class WalletCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  height: 38,
-                  width: 38,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Icon(AppIcons.resolve(wallet.icon), size: 20, color: color),
+                GriviIconBadge(
+                  icon: AppIcons.resolve(wallet.icon),
+                  color: color,
+                  size: 38,
+                  radius: 11,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -60,10 +53,7 @@ class WalletCard extends StatelessWidget {
                       ),
                       Text(
                         wallet.type.label,
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 12,
-                        ),
+                        style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                       ),
                     ],
                   ),

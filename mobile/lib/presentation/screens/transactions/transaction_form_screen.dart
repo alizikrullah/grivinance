@@ -175,8 +175,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 style: SegmentedButton.styleFrom(
                   backgroundColor: AppColors.surfaceVariant,
                   foregroundColor: AppColors.textSecondary,
-                  selectedBackgroundColor:
-                      _type == TxType.income ? AppColors.income : AppColors.expense,
+                  selectedBackgroundColor: _type == TxType.income
+                      ? AppColors.income
+                      : AppColors.expense,
                   selectedForegroundColor: Colors.white,
                   side: BorderSide.none,
                 ),
@@ -253,9 +254,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     children: [
                       const Icon(Icons.event, size: 20, color: AppColors.textMuted),
                       const SizedBox(width: 12),
-                      Text(
-                        '${DateFormatter.full(_date)} · ${DateFormatter.time(_date)}',
-                      ),
+                      Text('${DateFormatter.full(_date)} · ${DateFormatter.time(_date)}'),
                     ],
                   ),
                 ),
@@ -326,12 +325,9 @@ class _SelectChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.2) : AppColors.surfaceVariant,
+          color: AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? color : Colors.transparent,
-            width: 1.5,
-          ),
+          border: Border.all(color: selected ? color : Colors.transparent, width: 1.5),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

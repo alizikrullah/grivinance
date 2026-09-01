@@ -32,11 +32,11 @@ class WalletModel {
   final String color;
 
   factory WalletModel.fromJson(Map<String, dynamic> json) => WalletModel(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        type: WalletType.fromApi(json['type'] as String),
-        balance: double.parse(json['balance'] as String),
-        icon: json['icon'] as String,
-        color: json['color'] as String,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    type: WalletType.fromApi(json['type'] as String),
+    balance: double.parse(json['balance'] as String),
+    icon: json['icon'] as String,
+    color: json['color'] as String,
+  );
 }

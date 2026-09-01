@@ -10,6 +10,7 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../providers/transaction_provider.dart';
 import '../../widgets/common/grivi_async_view.dart';
+import '../../widgets/common/grivi_icon_badge.dart';
 
 class TransactionDetailScreen extends ConsumerWidget {
   const TransactionDetailScreen({super.key, required this.transactionId});
@@ -49,18 +50,11 @@ class TransactionDetailScreen extends ConsumerWidget {
               Center(
                 child: Column(
                   children: [
-                    Container(
-                      height: 68,
-                      width: 68,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(
-                        AppIcons.resolve(tx.category.icon),
-                        size: 32,
-                        color: color,
-                      ),
+                    GriviIconBadge(
+                      icon: AppIcons.resolve(tx.category.icon),
+                      color: color,
+                      size: 68,
+                      radius: 20,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -95,7 +89,8 @@ class TransactionDetailScreen extends ConsumerWidget {
                     const Divider(height: 1),
                     _DetailRow(
                       label: 'Tanggal',
-                      value: '${DateFormatter.full(tx.date)} · '
+                      value:
+                          '${DateFormatter.full(tx.date)} · '
                           '${DateFormatter.time(tx.date)}',
                     ),
                     if (tx.note?.isNotEmpty == true) ...[

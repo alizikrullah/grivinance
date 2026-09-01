@@ -43,7 +43,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     try {
-      await ref.read(authProvider.notifier).register(
+      await ref
+          .read(authProvider.notifier)
+          .register(
             name: _nameController.text.trim(),
             email: _emailController.text.trim(),
             password: _passwordController.text,
@@ -77,9 +79,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   children: [
                     Text(
                       'Buat akun',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 6),
                     const Text(
