@@ -1,0 +1,108 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  wallets       Wallet[]
+  categories    Category[]
+  transactions  Transaction[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Wallet {
+  id        String     @id @default(cuid())
+  userId    String     @map("user_id")
+  name      String
+  type      WalletType
+  balance   Decimal    @default(0) @db.Decimal(15, 2)
+  icon      String
+  color     String
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+enum WalletType {
+  e_wallet
+  bank
+  cash
+}
+
+model Category {
+  id        String       @id @default(cuid())
+  userId    String?      @map("user_id")
+  name      String
+  icon      String
+  color     String
+  type      CategoryType
+  isDefault Boolean      @default(false) @map("is_default")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+enum CategoryType {
+  income
+  expense
+}
+
+model Transaction {
+  id         String          @id @default(cuid())
+  userId     String          @map("user_id")
+  walletId   String          @map("wallet_id")
+  categoryId String          @map("category_id")
+  type       TransactionType
+  amount     Decimal         @db.Decimal(15, 2)
+  note       String?
+  date       DateTime
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet   Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([userId, date])
+  @@index([walletId])
+  @@index([categoryId])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  income
+  expense
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
