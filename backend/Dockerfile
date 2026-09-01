@@ -1,8 +1,10 @@
 FROM node:20-slim
 
-# Prisma masih ngecek versi libssl waktu generate. Tanpa ini muncul warning
-# "failed to detect the libssl/openssl version" di tiap build.
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# openssl: Prisma masih ngecek versi libssl waktu generate, tanpa ini muncul
+#   warning "failed to detect the libssl/openssl version" di tiap build.
+# curl: healthcheck Coolify dijalankan DARI DALAM container dan butuh curl/wget.
+#   node:20-slim nggak bawa dua-duanya, jadi container sehat pun dicap unhealthy.
+RUN apt-get update -y && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
