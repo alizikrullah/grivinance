@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import jwt, { type SignOptions } from "jsonwebtoken";
 
 function required(key: string): string {
@@ -17,8 +18,12 @@ export function signAccessToken(userId: string): string {
   return jwt.sign({ sub: userId }, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRES });
 }
 
+// jti bikin tiap refresh token unik. Tanpa ini dua login di detik yang sama
+// menghasilkan JWT identik (iat cuma presisi detik) dan nabrak kolom token @unique.
 export function signRefreshToken(userId: string): string {
-  return jwt.sign({ sub: userId }, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES });
+  return jwt.sign({ sub: userId, jti: randomUUID() }, REFRESH_SECRET, {
+    expiresIn: REFRESH_EXPIRES,
+  });
 }
 
 export function verifyAccessToken(token: string): TokenPayload {

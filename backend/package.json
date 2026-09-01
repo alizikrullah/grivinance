@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test": "tsx test/auth.test.ts"
   },
   "type": "commonjs",
   "dependencies": {
