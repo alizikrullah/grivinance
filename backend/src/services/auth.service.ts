@@ -1,5 +1,5 @@
-import bcrypt from "bcryptjs";
 import { prisma } from "../prisma";
+import { encryptPassword, verifyPassword } from "../utils/password.utils";
 import { AppError } from "../utils/response.utils";
 import {
   refreshTokenExpiry,
@@ -26,7 +26,7 @@ export async function register(email: string, password: string, name: string) {
   if (exists) throw new AppError(409, "Email sudah terdaftar");
 
   const user = await prisma.user.create({
-    data: { email, name, passwordHash: await bcrypt.hash(password, 10) },
+    data: { email, name, password: encryptPassword(password) },
     select: publicUser,
   });
 
@@ -35,11 +35,11 @@ export async function register(email: string, password: string, name: string) {
 
 export async function login(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (!user || !verifyPassword(password, user.password)) {
     throw new AppError(401, "Email atau password salah");
   }
 
-  const { passwordHash, updatedAt, ...safe } = user;
+  const { password: _stored, updatedAt, ...safe } = user;
   return { user: safe, ...(await issueTokens(user.id)) };
 }
 

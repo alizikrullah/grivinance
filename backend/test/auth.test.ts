@@ -45,7 +45,7 @@ async function main() {
     assert.equal(reg.json.data.user.email, email);
     assert.ok(reg.json.data.accessToken);
     assert.ok(reg.json.data.refreshToken);
-    assert.equal(reg.json.data.user.passwordHash, undefined);
+    assert.equal(reg.json.data.user.password, undefined);
   });
 
   const dup = await call("POST", "/api/auth/register", { email, password, name: "Test User" });

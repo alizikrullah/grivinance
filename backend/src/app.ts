@@ -3,6 +3,10 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./routes/auth.routes";
+import walletRoutes from "./routes/wallet.routes";
+import categoryRoutes from "./routes/category.routes";
+import transactionRoutes from "./routes/transaction.routes";
+import summaryRoutes from "./routes/summary.routes";
 import { AppError, fail } from "./utils/response.utils";
 
 const app = express();
@@ -17,6 +21,10 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/wallets", walletRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/summary", summaryRoutes);
 
 app.use((_req: Request, res: Response) => fail(res, 404, "Endpoint tidak ditemukan"));
 
