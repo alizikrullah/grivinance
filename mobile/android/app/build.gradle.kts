@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "my.id.grivilabs.grivinance"
-    compileSdk = flutter.compileSdkVersion
+    // flutter.compileSdkVersion masih 36, sementara flutter_secure_storage 11
+    // menuntut minimal 37. Dipatok manual sampai default Flutter menyusul.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
