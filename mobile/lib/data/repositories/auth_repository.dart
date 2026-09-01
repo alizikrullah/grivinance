@@ -16,7 +16,7 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final result = await _call(
+    final result = await _api.send(
       () => _api.dio.post(
         ApiConstants.register,
         data: {'name': name, 'email': email, 'password': password},
@@ -30,7 +30,7 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final result = await _call(
+    final result = await _api.send(
       () => _api.dio.post(
         ApiConstants.login,
         data: {'email': email, 'password': password},
@@ -43,7 +43,7 @@ class AuthRepository {
   /// Dipakai route guard waktu cold start: token ada di storage belum tentu
   /// masih valid, jadi harus ditanya ke server.
   Future<UserModel> me() async {
-    final data = await _call(() => _api.dio.get(ApiConstants.me));
+    final data = await _api.send(() => _api.dio.get(ApiConstants.me));
     return UserModel.fromJson(data as Map<String, dynamic>);
   }
 
@@ -73,11 +73,4 @@ class AuthRepository {
 
   static final _noAuth = Options(extra: const {'skipAuth': true});
 
-  Future<dynamic> _call(Future<Response<dynamic>> Function() request) async {
-    try {
-      return ApiService.unwrap(await request());
-    } catch (e) {
-      throw ApiService.toApiException(e);
-    }
-  }
 }

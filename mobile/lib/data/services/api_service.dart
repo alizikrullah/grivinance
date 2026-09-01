@@ -114,6 +114,16 @@ class ApiService {
     );
   }
 
+  /// Jalur standar semua repository: kirim request, buka amplop responsnya,
+  /// dan seragamkan errornya jadi ApiException.
+  Future<dynamic> send(Future<Response<dynamic>> Function() request) async {
+    try {
+      return unwrap(await request());
+    } catch (e) {
+      throw toApiException(e);
+    }
+  }
+
   /// Buka amplop { success, message, data } dan lempar ApiException kalau gagal.
   static dynamic unwrap(Response<dynamic> response) {
     final body = response.data;

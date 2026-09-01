@@ -6,7 +6,7 @@ class ApiConstants {
   /// flutter run --dart-define=API_BASE_URL=http://192.168.1.100
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://grivinance-api.grivilabs.my.id',
+    defaultValue: 'https://backend-grivinance.grivilabs.my.id',
   );
 
   static const Duration connectTimeout = Duration(seconds: 15);
