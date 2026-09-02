@@ -4,6 +4,3 @@ dist/
 backend/src/generated/
 mobile/build/
 mobile/.dart_tool/
-
-# catatan internal, tidak ikut ke repo publik
-CLAUDE.md
