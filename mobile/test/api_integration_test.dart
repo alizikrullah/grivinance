@@ -97,6 +97,29 @@ void main() {
     expect(wallet.type, WalletType.bank);
   });
 
+  test('saldo awal bisa diubah selama wallet belum ada transaksi', () async {
+    final updated = await wallets.update(
+      id: walletId,
+      name: 'Test Wallet',
+      type: WalletType.bank,
+      icon: 'account_balance',
+      color: '#3B82F6',
+      balance: 250000,
+    );
+    expect(updated.balance, 250000.0);
+    expect(updated.canEditBalance, isTrue);
+
+    // dikembalikan supaya perhitungan test berikutnya tetap sama
+    await wallets.update(
+      id: walletId,
+      name: 'Test Wallet',
+      type: WalletType.bank,
+      icon: 'account_balance',
+      color: '#3B82F6',
+      balance: 100000,
+    );
+  });
+
   test('kategori custom dibuat dengan isPreset false', () async {
     final category = await categories.create(
       name: 'Test Kategori',
@@ -128,9 +151,7 @@ void main() {
   });
 
   test('list transaksi bawa relasi wallet dan kategori', () async {
-    final page = await transactions.list(
-      filter: TransactionFilter(walletId: walletId),
-    );
+    final page = await transactions.list(filter: TransactionFilter(walletId: walletId));
     expect(page.total, 1);
     expect(page.items.first.wallet.name, 'Test Wallet');
     expect(page.items.first.category.icon, 'coffee');

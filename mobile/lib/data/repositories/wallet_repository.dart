@@ -36,17 +36,27 @@ class WalletRepository {
     return WalletModel.fromJson(data as Map<String, dynamic>);
   }
 
+  /// [balance] hanya dikirim kalau wallet belum punya transaksi. Backend juga
+  /// menolak dengan 409 kalau aturan itu dilanggar, jadi ini bukan satu-satunya
+  /// penjaga.
   Future<WalletModel> update({
     required String id,
     required String name,
     required WalletType type,
     required String icon,
     required String color,
+    double? balance,
   }) async {
     final data = await _api.send(
       () => _api.dio.put(
         ApiConstants.wallet(id),
-        data: {'name': name, 'type': type.apiValue, 'icon': icon, 'color': color},
+        data: {
+          'name': name,
+          'type': type.apiValue,
+          'icon': icon,
+          'color': color,
+          if (balance != null) 'balance': balance.toStringAsFixed(2),
+        },
       ),
     );
     return WalletModel.fromJson(data as Map<String, dynamic>);

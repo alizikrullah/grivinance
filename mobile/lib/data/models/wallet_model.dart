@@ -20,6 +20,7 @@ class WalletModel {
     required this.balance,
     required this.icon,
     required this.color,
+    required this.transactionCount,
   });
 
   final String id;
@@ -31,6 +32,12 @@ class WalletModel {
   final String icon;
   final String color;
 
+  /// Dikirim backend supaya form tahu boleh menampilkan field saldo awal atau
+  /// tidak, tanpa perlu query transaksi terpisah cuma buat menghitung.
+  final int transactionCount;
+
+  bool get canEditBalance => transactionCount == 0;
+
   factory WalletModel.fromJson(Map<String, dynamic> json) => WalletModel(
     id: json['id'] as String,
     name: json['name'] as String,
@@ -38,5 +45,6 @@ class WalletModel {
     balance: double.parse(json['balance'] as String),
     icon: json['icon'] as String,
     color: json['color'] as String,
+    transactionCount: json['transactionCount'] as int? ?? 0,
   );
 }

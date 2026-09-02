@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../data/models/category_model.dart';
 import '../../../data/models/summary_model.dart';
 import '../../../providers/summary_provider.dart';
 import '../../widgets/chart/donut_chart_widget.dart';
@@ -149,7 +150,11 @@ class _YearlyTab extends ConsumerWidget {
           onRetry: () => ref.invalidate(yearlySummaryProvider),
           builder: (data) => Column(
             children: [
-              _TotalsRow(income: data.totalIncome, expense: data.totalExpense),
+              _TotalsRow(
+                income: data.totalIncome,
+                expense: data.totalExpense,
+                selectable: false,
+              ),
               const SizedBox(height: 22),
               YearlyBarChartWidget(months: data.months),
             ],
@@ -160,39 +165,53 @@ class _YearlyTab extends ConsumerWidget {
   }
 }
 
-class _SummaryBody extends StatelessWidget {
+class _SummaryBody extends ConsumerWidget {
   const _SummaryBody({required this.summary});
 
   final PeriodSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final type = ref.watch(summaryTypeProvider);
+    final isExpense = type == TxType.expense;
+
     return Column(
       children: [
         _TotalsRow(income: summary.totalIncome, expense: summary.totalExpense),
         const SizedBox(height: 22),
-        const Align(
+        Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            'Pengeluaran per kategori',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            '${type.label} per kategori',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
         ),
         const SizedBox(height: 10),
-        DonutChartWidget(items: summary.expenses),
+        DonutChartWidget(
+          items: isExpense ? summary.expenses : summary.incomes,
+          emptyMessage: 'Belum ada ${type.label.toLowerCase()} di periode ini',
+        ),
       ],
     );
   }
 }
 
-class _TotalsRow extends StatelessWidget {
-  const _TotalsRow({required this.income, required this.expense});
+/// Dua kartu ini merangkap tombol pilih tipe untuk donut di bawahnya.
+/// Di tab Tahunan tidak ada donut, jadi [selectable] dimatikan supaya kartunya
+/// tidak terlihat bisa diklik padahal tidak melakukan apa-apa.
+class _TotalsRow extends ConsumerWidget {
+  const _TotalsRow({required this.income, required this.expense, this.selectable = true});
 
   final double income;
   final double expense;
+  final bool selectable;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = ref.watch(summaryTypeProvider);
+
+    void select(TxType type) => ref.read(summaryTypeProvider.notifier).state = type;
+
     return Row(
       children: [
         Expanded(
@@ -201,6 +220,8 @@ class _TotalsRow extends StatelessWidget {
             amount: income,
             color: AppColors.income,
             icon: Icons.south_west,
+            selected: selectable && active == TxType.income,
+            onTap: selectable ? () => select(TxType.income) : null,
           ),
         ),
         const SizedBox(width: 12),
@@ -210,6 +231,8 @@ class _TotalsRow extends StatelessWidget {
             amount: expense,
             color: AppColors.expense,
             icon: Icons.north_east,
+            selected: selectable && active == TxType.expense,
+            onTap: selectable ? () => select(TxType.expense) : null,
           ),
         ),
       ],
@@ -223,42 +246,62 @@ class _TotalCard extends StatelessWidget {
     required this.amount,
     required this.color,
     required this.icon,
+    this.selected = false,
+    this.onTap,
   });
 
   final String label;
   final double amount;
   final Color color;
   final IconData icon;
+  final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    // Yang tidak terpilih diredupkan supaya jelas mana yang lagi ditampilkan
+    // donut. Tanpa beda tampilan, kartunya tidak terbaca sebagai tombol.
+    final dim = onTap != null && !selected;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: selected ? color : Colors.transparent, width: 1.5),
+        ),
+        child: Opacity(
+          opacity: dim ? 0.5 : 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 15, color: color),
-              const SizedBox(width: 6),
+              Row(
+                children: [
+                  Icon(icon, size: 15, color: color),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                    ),
+                  ),
+                  if (selected) Icon(Icons.pie_chart, size: 13, color: color),
+                ],
+              ),
+              const SizedBox(height: 8),
               Text(
-                label,
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                CurrencyFormatter.format(amount),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: color),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            CurrencyFormatter.format(amount),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: color),
-          ),
-        ],
+        ),
       ),
     );
   }

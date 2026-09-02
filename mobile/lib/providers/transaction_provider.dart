@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/category_model.dart';
 import '../data/models/transaction_model.dart';
 import '../data/repositories/transaction_repository.dart';
+import '../data/services/export_service.dart';
 import 'auth_provider.dart';
 import 'summary_provider.dart';
 import 'wallet_provider.dart';
@@ -143,4 +144,8 @@ final transactionDetailProvider = FutureProvider.family<TransactionModel, String
   id,
 ) {
   return ref.watch(transactionRepositoryProvider).detail(id);
+});
+
+final exportServiceProvider = Provider<ExportService>((ref) {
+  return ExportService(ref.watch(transactionRepositoryProvider));
 });

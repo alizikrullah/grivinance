@@ -5,13 +5,21 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/transaction_provider.dart';
 import '../../widgets/common/grivi_icon_badge.dart';
 
-class AccountScreen extends ConsumerWidget {
+class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends ConsumerState<AccountScreen> {
+  bool _exporting = false;
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).value;
 
     return Scaffold(
@@ -82,6 +90,13 @@ class AccountScreen extends ConsumerWidget {
             subtitle: 'Kategori bawaan dan buatan sendiri',
             onTap: () => context.push(AppRoutes.categories),
           ),
+          const SizedBox(height: 10),
+          _MenuTile(
+            icon: Icons.file_download_outlined,
+            title: _exporting ? 'Menyiapkan file...' : 'Export ke Excel',
+            subtitle: 'Pilih rentang tanggal, hasilnya file .xlsx',
+            onTap: _exporting ? null : _export,
+          ),
           const SizedBox(height: 24),
           _MenuTile(
             icon: Icons.logout,
@@ -92,6 +107,43 @@ class AccountScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _export() async {
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      helpText: 'Pilih rentang transaksi',
+      saveText: 'Export',
+    );
+    if (range == null || !mounted) return;
+
+    setState(() => _exporting = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final service = ref.read(exportServiceProvider);
+      final transactions = await service.fetchRange(start: range.start, end: range.end);
+
+      if (transactions.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Tidak ada transaksi di rentang itu')),
+        );
+        return;
+      }
+
+      final path = await service.buildWorkbook(
+        transactions: transactions,
+        start: range.start,
+        end: range.end,
+      );
+      await service.share(path, start: range.start, end: range.end);
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Gagal export: $e')));
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
   }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
@@ -129,7 +181,7 @@ class _MenuTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool danger;
 
   @override

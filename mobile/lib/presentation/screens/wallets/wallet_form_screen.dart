@@ -39,6 +39,11 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
 
   bool get _isEdit => widget.walletId != null;
 
+  /// Saldo awal cuma bisa disunting selama wallet belum punya transaksi.
+  /// Begitu ada transaksi, balance = saldo awal + jumlah transaksi, dan dua
+  /// komponen itu tidak disimpan terpisah. Backend menolak dengan 409 juga.
+  bool _canEditBalance = true;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -54,6 +59,10 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
     _type = wallet.type;
     _icon = wallet.icon;
     _color = wallet.color;
+    _canEditBalance = wallet.canEditBalance;
+    if (_canEditBalance) {
+      _balanceController.text = wallet.balance.toStringAsFixed(0);
+    }
   }
 
   Future<void> _submit() async {
@@ -73,6 +82,9 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
           type: _type,
           icon: _icon,
           color: _color,
+          balance: _canEditBalance
+              ? CurrencyFormatter.parseInput(_balanceController.text)
+              : null,
         );
       } else {
         await notifier.create(
@@ -136,6 +148,8 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
       if (existing != null) _prefill(existing);
     }
 
+    final showBalanceField = !_isEdit || _canEditBalance;
+
     final color = hexToColor(_color);
     final busy = _loading || _deleting;
 
@@ -189,7 +203,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                   side: BorderSide.none,
                 ),
               ),
-              if (!_isEdit) ...[
+              if (showBalanceField) ...[
                 const SizedBox(height: 18),
                 GriviTextField(
                   controller: _balanceController,
@@ -198,6 +212,33 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                   icon: Icons.savings_outlined,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ] else ...[
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lock_outline, size: 17, color: AppColors.textMuted),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Saldo awal terkunci karena wallet ini sudah punya '
+                          'transaksi. Hapus semua transaksinya kalau mau '
+                          'mengubahnya lagi.',
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 12.5,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               const SizedBox(height: 18),

@@ -7,24 +7,25 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../data/models/summary_model.dart';
 import '../common/grivi_icon_badge.dart';
 
-/// Donut pengeluaran per kategori + legend di bawahnya.
+/// Donut rincian per kategori + legend di bawahnya.
 class DonutChartWidget extends StatelessWidget {
-  const DonutChartWidget({super.key, required this.items});
+  const DonutChartWidget({super.key, required this.items, required this.emptyMessage});
 
   final List<CategoryBreakdown> items;
+
+  /// Wajib diisi pemanggil: teksnya ikut tipe yang lagi dipilih, bukan selalu
+  /// bicara soal pengeluaran.
+  final String emptyMessage;
 
   @override
   Widget build(BuildContext context) {
     final total = items.fold<double>(0, (sum, item) => sum + item.total);
 
     if (items.isEmpty || total <= 0) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
         child: Center(
-          child: Text(
-            'Belum ada pengeluaran di periode ini',
-            style: TextStyle(color: AppColors.textMuted),
-          ),
+          child: Text(emptyMessage, style: const TextStyle(color: AppColors.textMuted)),
         ),
       );
     }

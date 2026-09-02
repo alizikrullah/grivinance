@@ -45,8 +45,16 @@ class WalletsNotifier extends AsyncNotifier<List<WalletModel>> {
     required WalletType type,
     required String icon,
     required String color,
+    double? balance,
   }) async {
-    await _repository.update(id: id, name: name, type: type, icon: icon, color: color);
+    await _repository.update(
+      id: id,
+      name: name,
+      type: type,
+      icon: icon,
+      color: color,
+      balance: balance,
+    );
     await refresh();
   }
 

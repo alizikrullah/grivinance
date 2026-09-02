@@ -185,6 +185,66 @@ async function main() {
   const gopayAfterDelete = await balanceOf(gopay.id);
   check("hapus transaksi: GoPay balik 0.00", () => assert.equal(gopayAfterDelete, "0.00"));
 
+  // ---------- saldo awal ----------
+  const freshWallet = (
+    await call("POST", "/api/wallets", {
+      name: "Kosong",
+      type: "cash",
+      icon: "payments",
+      color: "#6B7280",
+      balance: "1000",
+    })
+  ).json.data;
+  check("wallet baru: transactionCount 0", () =>
+    assert.equal(freshWallet.transactionCount, 0),
+  );
+
+  const editBalance = await call("PUT", `/api/wallets/${freshWallet.id}`, {
+    name: "Kosong",
+    type: "cash",
+    icon: "payments",
+    color: "#6B7280",
+    balance: "7500",
+  });
+  check("saldo awal boleh diubah selama belum ada transaksi", () => {
+    assert.equal(editBalance.status, 200);
+    assert.equal(editBalance.json.data.balance, "7500.00");
+  });
+
+  await call("POST", "/api/transactions", {
+    walletId: freshWallet.id,
+    categoryId: kopi.id,
+    type: "expense",
+    amount: "500",
+    date: "2026-09-10T09:00:00+07:00",
+  });
+
+  const blockedBalance = await call("PUT", `/api/wallets/${freshWallet.id}`, {
+    name: "Kosong",
+    type: "cash",
+    icon: "payments",
+    color: "#6B7280",
+    balance: "9999",
+  });
+  check("saldo awal ditolak setelah ada transaksi -> 409", () => {
+    assert.equal(blockedBalance.status, 409);
+    assert.match(blockedBalance.json.message, /saldo awal tidak bisa diubah/);
+  });
+
+  const renameOnly = await call("PUT", `/api/wallets/${freshWallet.id}`, {
+    name: "Kosong Baru",
+    type: "cash",
+    icon: "payments",
+    color: "#6B7280",
+  });
+  check("field lain tetap boleh diubah walau ada transaksi", () => {
+    assert.equal(renameOnly.status, 200);
+    assert.equal(renameOnly.json.data.name, "Kosong Baru");
+    assert.equal(renameOnly.json.data.transactionCount, 1);
+  });
+
+  await call("DELETE", `/api/wallets/${freshWallet.id}`);
+
   // ---------- kategori terpakai ----------
   await call("POST", "/api/transactions", {
     walletId: bca.id,

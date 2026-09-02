@@ -65,16 +65,19 @@ class DashboardScreen extends ConsumerWidget {
                 onAction: () => context.push(AppRoutes.wallets),
               ),
               const SizedBox(height: 10),
-              SizedBox(
-                height: 132,
-                child: GriviAsyncView<List<WalletModel>>(
-                  value: wallets,
-                  onRetry: () => ref.read(walletsProvider.notifier).refresh(),
-                  isEmpty: (data) => data.isEmpty,
-                  emptyIcon: Icons.account_balance_wallet_outlined,
-                  emptyTitle: 'Belum ada wallet',
-                  emptyMessage: 'Tambah wallet dulu sebelum mencatat transaksi',
-                  builder: (data) => ListView.separated(
+              // Tinggi tetap cuma membungkus daftar kartunya. Kalau ikut
+              // membungkus GriviAsyncView, state kosong dan error yang jauh
+              // lebih tinggi bakal meluber dan menimpa section di bawahnya.
+              GriviAsyncView<List<WalletModel>>(
+                value: wallets,
+                onRetry: () => ref.read(walletsProvider.notifier).refresh(),
+                isEmpty: (data) => data.isEmpty,
+                emptyIcon: Icons.account_balance_wallet_outlined,
+                emptyTitle: 'Belum ada wallet',
+                emptyMessage: 'Tambah wallet dulu sebelum mencatat transaksi',
+                builder: (data) => SizedBox(
+                  height: 132,
+                  child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: data.length,
                     separatorBuilder: (_, _) => const SizedBox(width: 12),
