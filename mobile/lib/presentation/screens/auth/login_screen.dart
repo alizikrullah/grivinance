@@ -142,28 +142,7 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          height: 64,
-          width: 64,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: const Icon(
-            Icons.account_balance_wallet,
-            color: Color(0xFF04231A),
-            size: 32,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          'Grivinance',
-          style: Theme.of(context).textTheme.titleLarge
-              ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.5),
-        ),
-      ],
-    );
+    // Logo aslinya sudah memuat wordmark, jadi tidak perlu teks terpisah.
+    return Image.asset('assets/brand/logo_full.png', height: 132, fit: BoxFit.contain);
   }
 }
