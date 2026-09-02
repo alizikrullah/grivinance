@@ -90,7 +90,7 @@ class _CategoryTab extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
               child: Row(
                 children: [
-                  GriviIconBadge(icon: AppIcons.resolve(category.icon), color: color),
+                  GriviIconBadge(name: category.icon, color: color),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

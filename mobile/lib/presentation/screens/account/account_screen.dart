@@ -146,7 +146,7 @@ class _MenuTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: [
-              GriviIconBadge(icon: icon, color: color),
+              GriviIconBadge.material(icon, color: color),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

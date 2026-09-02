@@ -184,7 +184,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
               IconPickerField(
                 selected: _icon,
                 color: color,
-                icons: AppIcons.forCategory,
+                groups: [IconGroup('IKON', AppIcons.forCategory)],
                 onChanged: (value) => setState(() => _icon = value),
               ),
               const SizedBox(height: 18),

@@ -34,12 +34,7 @@ class WalletCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                GriviIconBadge(
-                  icon: AppIcons.resolve(wallet.icon),
-                  color: color,
-                  size: 38,
-                  radius: 11,
-                ),
+                GriviIconBadge(name: wallet.icon, color: color, size: 38, radius: 11),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(

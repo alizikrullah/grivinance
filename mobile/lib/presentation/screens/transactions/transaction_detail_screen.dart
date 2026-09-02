@@ -51,7 +51,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     GriviIconBadge(
-                      icon: AppIcons.resolve(tx.category.icon),
+                      name: tx.category.icon,
                       color: color,
                       size: 68,
                       radius: 20,

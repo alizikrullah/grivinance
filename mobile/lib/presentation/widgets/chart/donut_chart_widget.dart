@@ -75,7 +75,7 @@ class DonutChartWidget extends StatelessWidget {
             child: Row(
               children: [
                 GriviIconBadge(
-                  icon: AppIcons.resolve(item.icon),
+                  name: item.icon,
                   color: hexToColor(item.color),
                   size: 30,
                   radius: 9,

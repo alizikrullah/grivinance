@@ -15,6 +15,7 @@ import '../../../providers/transaction_provider.dart';
 import '../../../providers/wallet_provider.dart';
 import '../../widgets/common/grivi_button.dart';
 import '../../widgets/common/grivi_error_banner.dart';
+import '../../widgets/common/grivi_icon_badge.dart';
 import '../../widgets/common/grivi_text_field.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
@@ -212,7 +213,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       .map(
                         (wallet) => _SelectChip(
                           label: wallet.name,
-                          icon: AppIcons.resolve(wallet.icon),
+                          iconName: wallet.icon,
                           color: hexToColor(wallet.color),
                           selected: _walletId == wallet.id,
                           onTap: () => setState(() => _walletId = wallet.id),
@@ -230,7 +231,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     .map(
                       (category) => _SelectChip(
                         label: category.name,
-                        icon: AppIcons.resolve(category.icon),
+                        iconName: category.icon,
                         color: hexToColor(category.color),
                         selected: _categoryId == category.id,
                         onTap: () => setState(() => _categoryId = category.id),
@@ -305,14 +306,14 @@ class _FieldLabel extends StatelessWidget {
 class _SelectChip extends StatelessWidget {
   const _SelectChip({
     required this.label,
-    required this.icon,
+    required this.iconName,
     required this.color,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
+  final String iconName;
   final Color color;
   final bool selected;
   final VoidCallback onTap;
@@ -332,8 +333,8 @@ class _SelectChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 17, color: selected ? color : AppColors.textMuted),
-            const SizedBox(width: 7),
+            GriviIconBadge(name: iconName, color: color, size: 22, radius: 7),
+            const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(

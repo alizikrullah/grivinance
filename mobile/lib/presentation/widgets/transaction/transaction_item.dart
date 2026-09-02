@@ -26,11 +26,7 @@ class TransactionItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
           children: [
-            GriviIconBadge(
-              icon: AppIcons.resolve(transaction.category.icon),
-              color: color,
-              size: 42,
-            ),
+            GriviIconBadge(name: transaction.category.icon, color: color, size: 42),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

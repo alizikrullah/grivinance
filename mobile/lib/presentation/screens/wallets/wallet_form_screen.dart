@@ -204,7 +204,11 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               IconPickerField(
                 selected: _icon,
                 color: color,
-                icons: AppIcons.forWallet,
+                groups: [
+                  IconGroup('BANK', AppLogos.bankValues),
+                  IconGroup('E-WALLET', AppLogos.eWalletValues),
+                  IconGroup('IKON', AppIcons.forWallet),
+                ],
                 onChanged: (value) => setState(() => _icon = value),
               ),
               const SizedBox(height: 18),

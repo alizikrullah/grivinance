@@ -1,40 +1,42 @@
 # Logo bank & e-wallet
 
-Taruh file logo di folder ini. Sudah didaftarkan di `pubspec.yaml`, jadi file
-baru langsung kebaca tanpa ubah konfigurasi apa pun.
+Sudah aktif. Logo di sini muncul di picker form wallet, dikelompokkan jadi
+**BANK** dan **E-WALLET**.
 
-## Aturan penamaan
+## Isi sekarang
 
-Nama file jadi **identitas logo di database**, jadi pakai huruf kecil dan garis
-bawah, tanpa spasi:
+| Bank | E-Wallet |
+|---|---|
+| `bca.png` | `gopay.png` |
+| `bni.png` | `ovo.png` |
+| `bri.png` | `dana.png` |
+| `mandiri.png` | `shopeepay.png` |
 
-```
-assets/logos/bca.png
-assets/logos/bni.png
-assets/logos/gopay.png
-assets/logos/dana.png
-assets/logos/ovo.png
-assets/logos/shopeepay.png
-```
+## Cara nambah logo baru
 
-## Format
+1. Taruh filenya di folder ini
+2. Daftarkan namanya di `lib/core/constants/app_icons.dart` → `AppLogos.banks`
+   atau `AppLogos.eWallets` (tanpa `.png`)
 
-- **PNG transparan** atau **SVG**. PNG paling aman — SVG butuh package tambahan
-  (`flutter_svg`) yang belum terpasang.
-- Ukuran **192×192 px** cukup. Icon tampil paling besar di layar detail
-  transaksi (68 px), jadi 192 sudah aman sampai layar 3x.
-- Logo dirender di dalam kotak berwarna, jadi **potong padding kosongnya** biar
-  logonya nggak kelihatan kekecilan.
+Cuma dua langkah itu. `pubspec.yaml` sudah mendaftarkan seluruh folder, jadi
+tidak perlu disentuh lagi.
 
-## Setelah file ditaruh
+## Aturan file
 
-Kode belum bisa memilih logo ini — masih pakai Material Icons. Yang perlu
-ditambah nanti:
+- **PNG transparan.** SVG butuh paket `flutter_svg` yang belum terpasang.
+- Yang ada sekarang 240×120. Ukuran bebas, tapi jangan di bawah 120 px sisi
+  terpanjang — logo tampil paling besar di layar detail transaksi (68 px).
+- Potong padding kosongnya.
 
-1. Daftar nama logo di `lib/core/constants/app_icons.dart`
-2. Cabang di `GriviIconBadge`: kalau nama diawali `logo:` render `Image.asset`,
-   selain itu render `Icon` seperti sekarang
-3. Tab kedua di `IconPickerField` — "Logo" di sebelah "Icon"
+## Kenapa latarnya putih
 
-Backend tidak perlu diubah sama sekali. Kolom `icon` sudah berupa String, jadi
-cukup diisi `logo:bca` alih-alih `account_balance`.
+Logo dirender di atas **latar putih**, bukan di atas warna wallet seperti
+Material Icon. Bukan pilihan gaya: logo-logo ini dirancang untuk latar terang.
+Wordmark `gopay` warnanya hitam — di atas latar gelap app atau di atas kotak
+berwarna, dia hilang total.
+
+## Bagaimana disimpan di database
+
+Kolom `icon` diisi `logo:bca`, bukan `bca`. Prefiks itu yang membedakannya dari
+nama Material Icon biasa, jadi satu kolom bisa menampung dua-duanya dan backend
+tidak perlu diubah sama sekali.

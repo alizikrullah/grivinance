@@ -82,6 +82,29 @@ class AppIcons {
       .toList();
 }
 
+/// Logo bank & e-wallet asli, filenya di `assets/logos/`.
+///
+/// Nilai yang masuk database berbentuk `logo:bca` — prefiksnya beda dari nama
+/// Material Icon biasa, jadi satu kolom `icon` bisa menampung dua-duanya tanpa
+/// mengubah backend sama sekali.
+class AppLogos {
+  AppLogos._();
+
+  static const String prefix = 'logo:';
+
+  static const List<String> banks = ['bca', 'bni', 'bri', 'mandiri'];
+  static const List<String> eWallets = ['gopay', 'ovo', 'dana', 'shopeepay'];
+
+  static bool isLogo(String? value) => value != null && value.startsWith(prefix);
+
+  /// `logo:bca` -> `assets/logos/bca.png`
+  static String assetPath(String value) =>
+      'assets/logos/${value.substring(prefix.length)}.png';
+
+  static List<String> get bankValues => banks.map((b) => '$prefix$b').toList();
+  static List<String> get eWalletValues => eWallets.map((e) => '$prefix$e').toList();
+}
+
 /// Warna dari API datang sebagai "#RRGGBB".
 Color hexToColor(String hex) {
   final cleaned = hex.replaceAll('#', '').trim();
