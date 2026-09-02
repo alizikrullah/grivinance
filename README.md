@@ -6,6 +6,12 @@ saldo tiap dompet yang selalu ikut menyesuaikan setiap kali ada transaksi.
 
 Monorepo: REST API di `backend/`, aplikasi Android di `mobile/`.
 
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="240" alt="Beranda">
+  <img src="docs/screenshots/grafik.png" width="240" alt="Grafik">
+  <img src="docs/screenshots/akun.png" width="240" alt="Akun">
+</p>
+
 ## Fitur
 
 - **Multi-wallet** — e-wallet, bank, dan tunai dengan ikon, warna, dan logo
