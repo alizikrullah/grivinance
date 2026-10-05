@@ -15,14 +15,21 @@ Monorepo: REST API di `backend/`, aplikasi Android di `mobile/`.
 ## Fitur
 
 - **Multi-wallet** — e-wallet, bank, dan tunai dengan ikon, warna, dan logo
-  bank/e-wallet asli
-- **Transaksi** — pemasukan dan pengeluaran, dengan filter tipe, wallet,
-  kategori, dan rentang tanggal
-- **Kategori** — 16 preset global plus kategori buatan sendiri
-- **Grafik** — donut rincian per kategori (harian dan bulanan) serta grafik
+  bank/e-wallet asli, plus riwayat per wallet
+- **Transaksi** — pemasukan, pengeluaran, dan **transfer antar wallet** dengan
+  biaya admin opsional; filter tipe, wallet, kategori, dan rentang tanggal
+- **Budget** — batas pengeluaran bulanan per kategori dengan progres terpakai
+- **Gamifikasi** — streak harian, misi harian dengan XP, level bergelar, dan
+  9 lencana pencapaian
+- **Kategori** — 17 preset global plus kategori buatan sendiri
+- **Grafik** — donut interaktif per kategori (harian dan bulanan) serta grafik
   batang 12 bulan
-- **Export Excel** — pilih rentang tanggal, hasilnya `.xlsx`
-- **Autentikasi JWT** — access token berumur pendek dengan refresh otomatis
+- **Profil** — foto profil, nama panggilan, nomor HP, tanggal lahir, ganti
+  email dan password
+- **Export Excel** — pilih rentang tanggal, hasilnya `.xlsx` dengan kolom
+  pemasukan, pengeluaran, dan transfer yang bisa langsung dijumlah
+- **Autentikasi JWT** — access token berumur pendek, refresh token yang
+  berotasi sehingga sesi tidak habis selama aplikasi dipakai
 
 ## Stack
 
@@ -96,9 +103,15 @@ GET    /health
 
 POST   /api/auth/register
 POST   /api/auth/login
-POST   /api/auth/refresh
-GET    /api/auth/me
+POST   /api/auth/refresh          { refreshToken, rotate? }
 DELETE /api/auth/logout
+GET    /api/auth/me
+PUT    /api/auth/me               nama, nama panggilan, nomor HP, tanggal lahir
+PUT    /api/auth/me/email
+PUT    /api/auth/me/password
+GET    /api/auth/me/avatar
+PUT    /api/auth/me/avatar        byte gambar mentah (JPEG/PNG/WebP, maks 1 MB)
+DELETE /api/auth/me/avatar
 
 GET    /api/wallets
 POST   /api/wallets
@@ -113,13 +126,20 @@ DELETE /api/categories/:id
 GET    /api/transactions          ?page &limit &walletId &categoryId &type
                                   &startDate &endDate
 GET    /api/transactions/:id
-POST   /api/transactions
+POST   /api/transactions          type income|expense|transfer
 PUT    /api/transactions/:id
 DELETE /api/transactions/:id
 
 GET    /api/summary/daily         ?date=2026-09-01
 GET    /api/summary/monthly       ?year=2026&month=9
 GET    /api/summary/yearly        ?year=2026
+
+GET    /api/budgets               ?year=2026&month=9
+PUT    /api/budgets/:categoryId
+DELETE /api/budgets/:categoryId
+
+GET    /api/gamification          streak, misi, XP, level, lencana
+POST   /api/gamification/missions/:key/claim
 ```
 
 Seluruh respons memakai bentuk yang sama:
@@ -131,9 +151,13 @@ Seluruh respons memakai bentuk yang sama:
 ## Pengujian
 
 ```bash
-cd backend && npm test     # 53 pemeriksaan
-cd mobile  && flutter test # 11 pemeriksaan
+cd backend && npm test     # 95 pemeriksaan
+cd mobile  && flutter test # 18 pemeriksaan
 ```
+
+Selain uji integrasi, Flutter punya *smoke test* yang merender setiap layar
+dengan API tiruan — dalam keadaan berisi data, akun kosong, dan belum login —
+supaya kesalahan tata letak tertangkap sebelum aplikasi dipasang di HP.
 
 Uji backend menjalankan aplikasi sungguhan di port acak dan memanggilnya lewat
 HTTP, jadi yang diuji adalah perilaku endpoint, bukan fungsi yang dipanggil
@@ -156,9 +180,19 @@ lebih dulu, karena floating point menyimpang pada angka besar.
 
 **Saldo wallet diperbarui secara atomik.** Setiap penambahan, perubahan, dan
 penghapusan transaksi mengubah saldo wallet di dalam satu transaksi database,
-sehingga catatan transaksi dan saldo tidak bisa berbeda. Memindahkan transaksi
-ke wallet lain akan membatalkan pengaruhnya di wallet lama sebelum menerapkannya
-di wallet baru.
+sehingga catatan transaksi dan saldo tidak bisa berbeda. Semua perubahan saldo
+lewat satu fungsi efek: perubahan transaksi berarti membatalkan efek baris lama
+lalu menerapkan efek baris baru, jadi pindah wallet, ganti tipe, dan ganti biaya
+admin tidak butuh kasus khusus.
+
+**Transfer bukan pemasukan maupun pengeluaran.** Transfer memindahkan uang antar
+wallet milik user sendiri, jadi tidak ikut dihitung di ringkasan maupun budget.
+Biaya admin-nya disimpan sebagai pengeluaran terpisah yang menempel ke transfer
+— uangnya benar-benar keluar, jadi tetap terhitung.
+
+**Gamifikasi dihitung di server.** Streak, penyelesaian misi, dan syarat lencana
+diturunkan dari data transaksi. Klaim misi divalidasi server dan dijaga unique
+constraint, sehingga tidak bisa diakali dari aplikasi maupun diklaim dua kali.
 
 **Saldo awal terkunci setelah ada transaksi.** Selama sebuah wallet belum punya
 transaksi, saldo awalnya masih boleh disunting. Setelah ada, saldo merupakan
