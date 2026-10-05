@@ -54,6 +54,30 @@ class AppIcons {
     'attach_money': Icons.attach_money,
     'currency_exchange': Icons.currency_exchange,
     'store': Icons.store,
+
+    // preset "Biaya Admin" (biaya transfer)
+    'receipt_long': Icons.receipt_long,
+
+    // lencana dan transfer — nama dikirim backend (gamification.service.ts)
+    'flag': Icons.flag,
+    'edit_note': Icons.edit_note,
+    'local_fire_department': Icons.local_fire_department,
+    'whatshot': Icons.whatshot,
+    'pie_chart': Icons.pie_chart,
+    'swap_horiz': Icons.swap_horiz,
+    'emoji_events': Icons.emoji_events,
+  };
+
+  /// Ikon yang punya arti tetap di app (lencana, transfer) — nggak ditawarkan
+  /// di picker kategori supaya kategori custom nggak tampak seperti lencana.
+  static const Set<String> _reserved = {
+    'flag',
+    'edit_note',
+    'local_fire_department',
+    'whatshot',
+    'pie_chart',
+    'swap_horiz',
+    'emoji_events',
   };
 
   static IconData resolve(String? name) => _map[name] ?? fallback;
@@ -78,6 +102,7 @@ class AppIcons {
 
   /// Sisanya buat kategori — semua icon kecuali yang khusus wallet.
   static List<String> get forCategory => _map.keys
+      .where((name) => !_reserved.contains(name))
       .where((name) => !forWallet.contains(name) || name == 'more_horiz')
       .toList();
 }

@@ -9,6 +9,7 @@ class StorageService {
 
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
+  static const String _hideBalanceKey = 'hide_balance';
 
   Future<String?> readAccessToken() => _storage.read(key: _accessTokenKey);
 
@@ -29,4 +30,11 @@ class StorageService {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
   }
+
+  /// Pilihan "sembunyikan saldo" di Beranda. Preferensi per HP, bukan per akun.
+  Future<bool> readHideBalance() async =>
+      await _storage.read(key: _hideBalanceKey) == 'true';
+
+  Future<void> saveHideBalance(bool hide) =>
+      _storage.write(key: _hideBalanceKey, value: '$hide');
 }

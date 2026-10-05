@@ -17,6 +17,9 @@ class ApiConstants {
   static const String login = '/api/auth/login';
   static const String refresh = '/api/auth/refresh';
   static const String me = '/api/auth/me';
+  static const String meEmail = '/api/auth/me/email';
+  static const String mePassword = '/api/auth/me/password';
+  static const String meAvatar = '/api/auth/me/avatar';
   static const String logout = '/api/auth/logout';
 
   // Wallets
@@ -35,4 +38,12 @@ class ApiConstants {
   static const String summaryDaily = '/api/summary/daily';
   static const String summaryMonthly = '/api/summary/monthly';
   static const String summaryYearly = '/api/summary/yearly';
+
+  // Budget
+  static const String budgets = '/api/budgets';
+  static String budget(String categoryId) => '/api/budgets/$categoryId';
+
+  // Gamifikasi
+  static const String gamification = '/api/gamification';
+  static String claimMission(String key) => '/api/gamification/missions/$key/claim';
 }

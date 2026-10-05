@@ -1,6 +1,5 @@
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/date_formatter.dart';
-import '../models/category_model.dart';
 import '../models/transaction_model.dart';
 import '../services/api_service.dart';
 
@@ -38,74 +37,20 @@ class TransactionRepository {
     return TransactionModel.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<TransactionModel> create({
-    required String walletId,
-    required String categoryId,
-    required TxType type,
-    required double amount,
-    required DateTime date,
-    String? note,
-  }) async {
+  Future<TransactionModel> create(TransactionInput input) async {
     final data = await _api.send(
-      () => _api.dio.post(
-        ApiConstants.transactions,
-        data: _body(
-          walletId: walletId,
-          categoryId: categoryId,
-          type: type,
-          amount: amount,
-          date: date,
-          note: note,
-        ),
-      ),
+      () => _api.dio.post(ApiConstants.transactions, data: input.toJson()),
     );
     return TransactionModel.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<TransactionModel> update({
-    required String id,
-    required String walletId,
-    required String categoryId,
-    required TxType type,
-    required double amount,
-    required DateTime date,
-    String? note,
-  }) async {
+  Future<TransactionModel> update(String id, TransactionInput input) async {
     final data = await _api.send(
-      () => _api.dio.put(
-        ApiConstants.transaction(id),
-        data: _body(
-          walletId: walletId,
-          categoryId: categoryId,
-          type: type,
-          amount: amount,
-          date: date,
-          note: note,
-        ),
-      ),
+      () => _api.dio.put(ApiConstants.transaction(id), data: input.toJson()),
     );
     return TransactionModel.fromJson(data as Map<String, dynamic>);
   }
 
   Future<void> delete(String id) =>
       _api.send(() => _api.dio.delete(ApiConstants.transaction(id)));
-
-  Map<String, dynamic> _body({
-    required String walletId,
-    required String categoryId,
-    required TxType type,
-    required double amount,
-    required DateTime date,
-    String? note,
-  }) {
-    return {
-      'walletId': walletId,
-      'categoryId': categoryId,
-      'type': type.apiValue,
-      'amount': amount.toStringAsFixed(2),
-      // Kirim dengan offset, biar server tahu ini jam berapa menurut user.
-      'date': date.toIso8601String(),
-      'note': (note?.trim().isEmpty ?? true) ? null : note!.trim(),
-    };
-  }
 }

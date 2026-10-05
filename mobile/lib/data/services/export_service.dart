@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/utils/date_formatter.dart';
+import '../models/category_model.dart';
 import '../models/transaction_model.dart';
 import '../repositories/transaction_repository.dart';
 
@@ -54,29 +55,57 @@ class ExportService {
     excel.rename(excel.getDefaultSheet()!, sheetName);
     final sheet = excel[sheetName];
 
+    // Pemasukan dan pengeluaran di kolom terpisah: dulu satu kolom "Jumlah"
+    // berisi keduanya sama-sama positif, jadi =SUM menghasilkan pemasukan
+    // DITAMBAH pengeluaran — angka yang nggak berarti apa-apa (BUG-11).
+    // Transfer cuma memindahkan uang, jadi punya kolomnya sendiri.
     sheet.appendRow([
       TextCellValue('Tanggal'),
       TextCellValue('Waktu'),
       TextCellValue('Tipe'),
       TextCellValue('Kategori'),
       TextCellValue('Wallet'),
-      TextCellValue('Jumlah'),
+      TextCellValue('Ke wallet'),
+      TextCellValue('Pemasukan'),
+      TextCellValue('Pengeluaran'),
+      TextCellValue('Dipindahkan'),
       TextCellValue('Catatan'),
     ]);
+
+    // Angka ditulis sebagai angka, bukan teks, supaya bisa langsung di-SUM.
+    CellValue? amountIf(bool condition, double amount) =>
+        condition ? DoubleCellValue(amount) : null;
 
     for (final tx in transactions) {
       final local = tx.date.toLocal();
       sheet.appendRow([
         DateCellValue.fromDateTime(local),
         TextCellValue(DateFormatter.time(local)),
-        TextCellValue(tx.type.label),
-        TextCellValue(tx.category.name),
+        TextCellValue(tx.isFee ? 'Biaya admin transfer' : tx.type.label),
+        TextCellValue(tx.category?.name ?? '-'),
         TextCellValue(tx.wallet.name),
-        // Angka dikirim sebagai angka, bukan teks, supaya bisa langsung di-SUM.
-        DoubleCellValue(tx.amount),
+        TextCellValue(tx.toWallet?.name ?? ''),
+        amountIf(tx.type == TxType.income, tx.amount),
+        amountIf(tx.type == TxType.expense, tx.amount),
+        amountIf(tx.isTransfer, tx.amount),
         TextCellValue(tx.note ?? ''),
       ]);
     }
+
+    // Baris total pakai rumus, jadi tetap benar kalau user mengedit isinya.
+    final last = transactions.length + 1;
+    sheet.appendRow([
+      TextCellValue('Total'),
+      null,
+      null,
+      null,
+      null,
+      null,
+      FormulaCellValue('SUM(G2:G$last)'),
+      FormulaCellValue('SUM(H2:H$last)'),
+      FormulaCellValue('SUM(I2:I$last)'),
+      null,
+    ]);
 
     final bytes = excel.encode();
     if (bytes == null) throw Exception('Gagal menyusun file Excel');

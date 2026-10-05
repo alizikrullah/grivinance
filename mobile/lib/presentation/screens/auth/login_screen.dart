@@ -6,6 +6,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
 import '../../widgets/common/grivi_button.dart';
+import '../../widgets/common/grivi_card.dart';
 import '../../widgets/common/grivi_error_banner.dart';
 import '../../widgets/common/grivi_text_field.dart';
 
@@ -52,6 +53,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Diisi waktu server menolak sesi dan user dikeluarkan paksa — tanpa ini
+    // user tiba-tiba ada di layar login tanpa tahu kenapa.
+    final notice = ref.watch(sessionNoticeProvider);
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -76,6 +81,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'Kelola keuangan kamu di satu tempat',
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
+                    if (notice != null) ...[
+                      const SizedBox(height: 18),
+                      GriviChip(
+                        icon: Icons.info_outline,
+                        label: notice,
+                        color: AppColors.warning,
+                      ),
+                    ],
                     const SizedBox(height: 28),
                     GriviTextField(
                       controller: _emailController,
@@ -111,8 +124,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 24),
                     GriviButton(label: 'Masuk', loading: _loading, onPressed: _submit),
                     const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    // Wrap, bukan Row: di layar sempit atau huruf sistem
+                    // yang diperbesar, tombolnya turun ke baris bawah alih-alih
+                    // meluber keluar layar.
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         const Text(
                           'Belum punya akun?',

@@ -11,8 +11,22 @@ class ApiException implements Exception {
   final int? statusCode;
   final List<String> fieldErrors;
 
+  /// Server nggak kejangkau sama sekali (bukan server yang menolak).
+  bool get isNetwork => statusCode == null;
+
   @override
   String toString() => message;
+}
+
+/// Hasil mencoba menukar refresh token.
+enum _RefreshResult {
+  ok,
+
+  /// Server menolak refresh token-nya — sesi memang habis.
+  rejected,
+
+  /// Server nggak kejangkau atau sedang error. Sesi belum tentu habis.
+  unreachable,
 }
 
 class ApiService {
@@ -40,23 +54,36 @@ class ApiService {
           handler.next(options);
         },
         onResponse: (response, handler) async {
+          final options = response.requestOptions;
+          final expired = response.statusCode == 401 &&
+              options.extra['retried'] != true &&
+              options.extra['skipAuth'] != true;
+          if (!expired) return handler.next(response);
+
           // Access token kedaluwarsa: tukar pakai refresh token, ulang request asli.
-          if (response.statusCode == 401 &&
-              response.requestOptions.extra['retried'] != true &&
-              response.requestOptions.extra['skipAuth'] != true) {
-            final refreshed = await _refreshToken();
-            if (refreshed) {
+          switch (await _refreshToken()) {
+            case _RefreshResult.ok:
               try {
-                final retried = await _retry(response.requestOptions);
-                return handler.resolve(retried);
+                return handler.resolve(await _retry(options));
               } on DioException catch (e) {
-                return handler.next(e.response ?? response);
+                return handler.reject(e);
               }
-            }
-            await _storage.clear();
-            onSessionExpired?.call();
+            case _RefreshResult.rejected:
+              // Cuma di sini token boleh dihapus: server sendiri yang bilang
+              // sesinya habis.
+              await _storage.clear();
+              onSessionExpired?.call();
+              return handler.next(response);
+            case _RefreshResult.unreachable:
+              // Sinyal putus atau server lagi redeploy. Token disimpan; user
+              // cukup coba lagi nanti, bukan login ulang (BUG-4).
+              return handler.reject(
+                DioException(
+                  requestOptions: options,
+                  type: DioExceptionType.connectionError,
+                ),
+              );
           }
-          handler.next(response);
         },
       ),
     );
@@ -64,38 +91,53 @@ class ApiService {
 
   final StorageService _storage;
 
-  /// Dipanggil kalau refresh token juga sudah tidak valid.
+  /// Dipanggil kalau server menolak refresh token.
   final void Function()? onSessionExpired;
 
   late final Dio dio;
 
   /// Satu proses refresh dipakai bersama semua request yang barengan kena 401,
   /// biar nggak ada badai refresh yang saling menimpa.
-  Future<bool>? _pendingRefresh;
+  Future<_RefreshResult>? _pendingRefresh;
 
-  Future<bool> _refreshToken() {
+  Future<_RefreshResult> _refreshToken() {
     return _pendingRefresh ??= _doRefresh().whenComplete(() {
       _pendingRefresh = null;
     });
   }
 
-  Future<bool> _doRefresh() async {
+  Future<_RefreshResult> _doRefresh() async {
     final refreshToken = await _storage.readRefreshToken();
-    if (refreshToken == null) return false;
+    if (refreshToken == null) return _RefreshResult.rejected;
 
     // Dio polos: kalau lewat instance utama, refresh yang gagal bakal
     // memicu interceptor ini lagi dan looping.
-    final plain = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+    final plain = Dio(
+      BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        connectTimeout: ApiConstants.connectTimeout,
+        receiveTimeout: ApiConstants.receiveTimeout,
+        validateStatus: (status) => status != null && status < 500,
+      ),
+    );
+
     try {
+      // rotate: server ngasih refresh token pengganti, jadi sesi terus geser
+      // selama app dipakai dan nggak pernah habis di tengah jalan (REQ-7).
       final response = await plain.post(
         ApiConstants.refresh,
-        data: {'refreshToken': refreshToken},
+        data: {'refreshToken': refreshToken, 'rotate': true},
       );
-      final token = response.data['data']['accessToken'] as String;
-      await _storage.saveAccessToken(token);
-      return true;
-    } catch (_) {
-      return false;
+      if (response.statusCode != 200) return _RefreshResult.rejected;
+
+      final data = response.data['data'] as Map<String, dynamic>;
+      await _storage.saveTokens(
+        accessToken: data['accessToken'] as String,
+        refreshToken: data['refreshToken'] as String? ?? refreshToken,
+      );
+      return _RefreshResult.ok;
+    } on DioException {
+      return _RefreshResult.unreachable;
     }
   }
 
@@ -110,6 +152,8 @@ class ApiService {
         method: options.method,
         headers: {...options.headers}..remove('Authorization'),
         extra: {...options.extra, 'retried': true},
+        responseType: options.responseType,
+        contentType: options.contentType,
       ),
     );
   }
@@ -141,8 +185,11 @@ class ApiService {
         .map((e) => e is Map<String, dynamic> ? '${e['msg']}' : '$e')
         .toList();
 
+    // Pesan "Validasi gagal" doang nggak ngasih tahu apa-apa; pakai pesan
+    // field pertama kalau ada.
+    final message = body['message'] as String? ?? 'Terjadi kesalahan';
     throw ApiException(
-      body['message'] as String? ?? 'Terjadi kesalahan',
+      errors.isNotEmpty && message == 'Validasi gagal' ? errors.first : message,
       statusCode: response.statusCode,
       fieldErrors: errors,
     );
@@ -159,6 +206,15 @@ class ApiService {
           return ApiException('Koneksi ke server timeout');
         case DioExceptionType.connectionError:
           return ApiException('Tidak bisa terhubung ke server');
+        case DioExceptionType.badResponse:
+          // 5xx: server hidup dan ngirim pesannya sendiri — tampilkan itu,
+          // bukan "kesalahan jaringan".
+          final data = error.response?.data;
+          final message = data is Map<String, dynamic> ? data['message'] as String? : null;
+          return ApiException(
+            message ?? 'Server sedang bermasalah, coba lagi sebentar',
+            statusCode: error.response?.statusCode,
+          );
         default:
           return ApiException('Terjadi kesalahan jaringan');
       }

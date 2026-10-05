@@ -21,44 +21,111 @@ class TxRef {
     icon: json['icon'] as String,
     color: json['color'] as String,
   );
+
+  static TxRef? maybe(Object? json) =>
+      json == null ? null : TxRef.fromJson(json as Map<String, dynamic>);
 }
 
 class TransactionModel {
   const TransactionModel({
     required this.id,
     required this.walletId,
-    required this.categoryId,
     required this.type,
     required this.amount,
     required this.date,
     required this.wallet,
-    required this.category,
+    this.categoryId,
+    this.category,
+    this.toWalletId,
+    this.toWallet,
+    this.fee,
+    this.feeForId,
     this.note,
   });
 
   final String id;
   final String walletId;
-  final String categoryId;
   final TxType type;
   final double amount;
   final DateTime date;
   final TxRef wallet;
-  final TxRef category;
   final String? note;
 
+  /// Pemasukan/pengeluaran punya kategori; transfer tidak.
+  final String? categoryId;
+  final TxRef? category;
+
+  /// Wallet tujuan, cuma ada di transfer.
+  final String? toWalletId;
+  final TxRef? toWallet;
+
+  /// Biaya admin transfer ini (null kalau tanpa biaya).
+  final double? fee;
+
+  /// Terisi kalau baris ini biaya admin yang dibuat otomatis oleh sebuah
+  /// transfer. Baris seperti ini diubah/dihapus lewat transfernya.
+  final String? feeForId;
+
   bool get isIncome => type == TxType.income;
+  bool get isTransfer => type == TxType.transfer;
+  bool get isFee => feeForId != null;
+
+  /// Judul baris di daftar: nama kategori, atau "Transfer".
+  String get title => isTransfer ? 'Transfer' : (category?.name ?? '-');
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) => TransactionModel(
     id: json['id'] as String,
     walletId: json['walletId'] as String,
-    categoryId: json['categoryId'] as String,
+    categoryId: json['categoryId'] as String?,
+    toWalletId: json['toWalletId'] as String?,
+    feeForId: json['feeForId'] as String?,
     type: TxType.fromApi(json['type'] as String),
     amount: double.parse(json['amount'] as String),
+    fee: json['fee'] == null ? null : double.parse(json['fee'] as String),
     date: DateTime.parse(json['date'] as String),
     note: json['note'] as String?,
     wallet: TxRef.fromJson(json['wallet'] as Map<String, dynamic>),
-    category: TxRef.fromJson(json['category'] as Map<String, dynamic>),
+    category: TxRef.maybe(json['category']),
+    toWallet: TxRef.maybe(json['toWallet']),
   );
+}
+
+/// Isi form transaksi yang dikirim ke API.
+class TransactionInput {
+  const TransactionInput({
+    required this.type,
+    required this.walletId,
+    required this.amount,
+    required this.date,
+    this.categoryId,
+    this.toWalletId,
+    this.fee,
+    this.note,
+  });
+
+  final TxType type;
+  final String walletId;
+  final String? categoryId;
+  final String? toWalletId;
+  final double amount;
+  final double? fee;
+  final DateTime date;
+  final String? note;
+
+  Map<String, dynamic> toJson() {
+    final trimmedNote = note?.trim();
+    return {
+      'type': type.apiValue,
+      'walletId': walletId,
+      if (type == TxType.transfer) 'toWalletId': toWalletId else 'categoryId': categoryId,
+      'amount': amount.toStringAsFixed(2),
+      if (type == TxType.transfer && (fee ?? 0) > 0) 'fee': fee!.toStringAsFixed(2),
+      // UTC eksplisit. DateTime lokal di-toIso8601String() keluar TANPA offset,
+      // dan server di UTC membacanya sebagai jam UTC — geser 7 jam (BUG-2).
+      'date': date.toUtc().toIso8601String(),
+      'note': (trimmedNote == null || trimmedNote.isEmpty) ? null : trimmedNote,
+    };
+  }
 }
 
 class TransactionPage {

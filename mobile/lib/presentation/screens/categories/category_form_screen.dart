@@ -33,6 +33,11 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
   String? _error;
   bool _prefilled = false;
 
+  /// Tipe kategori yang udah dipakai transaksi dikunci server (409, BUG-10);
+  /// form ikut menguncinya supaya user nggak baru tahu setelah menekan simpan.
+  bool _canChangeType = true;
+  int _usage = 0;
+
   bool get _isEdit => widget.categoryId != null;
 
   @override
@@ -48,6 +53,8 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
     _type = category.type;
     _icon = category.icon;
     _color = category.color;
+    _canChangeType = category.canChangeType;
+    _usage = category.transactionCount;
   }
 
   Future<void> _submit() async {
@@ -122,7 +129,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isEdit) {
-      final all = ref.watch(categoriesProvider).value ?? const <CategoryModel>[];
+      final all = ref.watch(categoriesProvider).valueOrNull ?? const <CategoryModel>[];
       final existing = all.where((c) => c.id == widget.categoryId).firstOrNull;
       if (existing != null) _prefill(existing);
     }
@@ -167,19 +174,29 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
               ),
               const SizedBox(height: 10),
               SegmentedButton<TxType>(
-                segments: TxType.values
+                segments: TxType.categoryTypes
                     .map((t) => ButtonSegment(value: t, label: Text(t.label)))
                     .toList(),
                 selected: {_type},
-                onSelectionChanged: (value) => setState(() => _type = value.first),
+                onSelectionChanged: _canChangeType
+                    ? (value) => setState(() => _type = value.first)
+                    : null,
                 style: SegmentedButton.styleFrom(
                   backgroundColor: AppColors.surfaceVariant,
                   foregroundColor: AppColors.textSecondary,
                   selectedBackgroundColor: AppColors.primary,
-                  selectedForegroundColor: const Color(0xFF04231A),
+                  selectedForegroundColor: AppColors.onPrimary,
                   side: BorderSide.none,
                 ),
               ),
+              if (!_canChangeType)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, left: 4),
+                  child: Text(
+                    'Tipe terkunci karena kategori ini dipakai di $_usage transaksi.',
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  ),
+                ),
               const SizedBox(height: 18),
               IconPickerField(
                 selected: _icon,

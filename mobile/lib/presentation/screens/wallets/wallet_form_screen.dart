@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -61,7 +60,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
     _color = wallet.color;
     _canEditBalance = wallet.canEditBalance;
     if (_canEditBalance) {
-      _balanceController.text = wallet.balance.toStringAsFixed(0);
+      _balanceController.text = CurrencyFormatter.formatInput(wallet.balance);
     }
   }
 
@@ -132,7 +131,8 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
 
     try {
       await ref.read(walletsProvider.notifier).delete(widget.walletId!);
-      if (mounted) context.pop();
+      // true = dihapus; layar detail wallet di bawahnya ikut menutup diri.
+      if (mounted) context.pop(true);
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     } finally {
@@ -143,7 +143,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isEdit) {
-      final wallets = ref.watch(walletsProvider).value ?? const <WalletModel>[];
+      final wallets = ref.watch(walletsProvider).valueOrNull ?? const <WalletModel>[];
       final existing = wallets.where((w) => w.id == widget.walletId).firstOrNull;
       if (existing != null) _prefill(existing);
     }
@@ -199,7 +199,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                   backgroundColor: AppColors.surfaceVariant,
                   foregroundColor: AppColors.textSecondary,
                   selectedBackgroundColor: AppColors.primary,
-                  selectedForegroundColor: const Color(0xFF04231A),
+                  selectedForegroundColor: AppColors.onPrimary,
                   side: BorderSide.none,
                 ),
               ),
@@ -211,7 +211,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                   hint: '0',
                   icon: Icons.savings_outlined,
                   keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  inputFormatters: [RupiahInputFormatter()],
                 ),
               ] else ...[
                 const SizedBox(height: 18),

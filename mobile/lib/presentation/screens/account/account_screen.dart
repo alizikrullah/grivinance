@@ -5,8 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/gamification_provider.dart';
 import '../../../providers/transaction_provider.dart';
+import '../../widgets/common/grivi_avatar.dart';
+import '../../widgets/common/grivi_card.dart';
 import '../../widgets/common/grivi_icon_badge.dart';
+import '../../widgets/common/grivi_motion.dart';
+import '../../widgets/gamification/gamification_widgets.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
@@ -20,89 +25,110 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).value;
+    final user = ref.watch(authProvider).valueOrNull;
+    final game = ref.watch(gamificationProvider).valueOrNull;
+
+    final tiles = <Widget>[
+      _MenuTile(
+        icon: Icons.manage_accounts_outlined,
+        title: 'Edit profil',
+        subtitle: 'Foto, nama, nomor HP, email, password',
+        onTap: () => context.push(AppRoutes.profile),
+      ),
+      _MenuTile(
+        icon: Icons.account_balance_wallet_outlined,
+        title: 'Wallet',
+        subtitle: 'Kelola dompet, rekening, dan tunai',
+        onTap: () => context.push(AppRoutes.wallets),
+      ),
+      _MenuTile(
+        icon: Icons.category_outlined,
+        title: 'Kategori',
+        subtitle: 'Kategori bawaan dan buatan sendiri',
+        onTap: () => context.push(AppRoutes.categories),
+      ),
+      _MenuTile(
+        icon: Icons.pie_chart_outline,
+        title: 'Budget',
+        subtitle: 'Batas pengeluaran per kategori tiap bulan',
+        onTap: () => context.push(AppRoutes.budgets),
+      ),
+      _MenuTile(
+        icon: Icons.emoji_events_outlined,
+        title: 'Lencana',
+        subtitle: game == null
+            ? 'Pencapaian kamu'
+            : '${game.unlockedCount} dari ${game.achievements.length} terbuka',
+        color: AppColors.warning,
+        onTap: () => context.push(AppRoutes.achievements),
+      ),
+      _MenuTile(
+        icon: Icons.file_download_outlined,
+        title: _exporting ? 'Menyiapkan file...' : 'Export ke Excel',
+        subtitle: 'Pilih rentang tanggal, hasilnya file .xlsx',
+        onTap: _exporting ? null : _export,
+      ),
+    ];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Akun')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  height: 48,
-                  width: 48,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    (user?.name.isNotEmpty ?? false)
-                        ? user!.name.substring(0, 1).toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      color: Color(0xFF04231A),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          GriviFadeIn(
+            child: GriviCard(
+              onTap: () => context.push(AppRoutes.profile),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        user?.name ?? '-',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        user?.email ?? '',
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
+                      const GriviAvatar(size: 58),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?.name ?? '-',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                            ),
+                            Text(
+                              user?.email ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            ),
+                          ],
                         ),
                       ),
+                      const Icon(Icons.edit_outlined, size: 19, color: AppColors.textMuted),
                     ],
                   ),
-                ),
-              ],
+                  if (game != null) ...[
+                    const SizedBox(height: 16),
+                    LevelProgress(state: game),
+                  ],
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 20),
-          _MenuTile(
-            icon: Icons.account_balance_wallet_outlined,
-            title: 'Wallet',
-            subtitle: 'Kelola dompet, rekening, dan tunai',
-            onTap: () => context.push(AppRoutes.wallets),
-          ),
-          const SizedBox(height: 10),
-          _MenuTile(
-            icon: Icons.category_outlined,
-            title: 'Kategori',
-            subtitle: 'Kategori bawaan dan buatan sendiri',
-            onTap: () => context.push(AppRoutes.categories),
-          ),
-          const SizedBox(height: 10),
-          _MenuTile(
-            icon: Icons.file_download_outlined,
-            title: _exporting ? 'Menyiapkan file...' : 'Export ke Excel',
-            subtitle: 'Pilih rentang tanggal, hasilnya file .xlsx',
-            onTap: _exporting ? null : _export,
-          ),
-          const SizedBox(height: 24),
-          _MenuTile(
-            icon: Icons.logout,
-            title: 'Keluar',
-            danger: true,
-            onTap: () => _confirmLogout(context, ref),
+          const SizedBox(height: 18),
+          for (var i = 0; i < tiles.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: GriviFadeIn(index: i + 1, child: tiles[i]),
+            ),
+          const SizedBox(height: 12),
+          GriviFadeIn(
+            index: tiles.length + 1,
+            child: _MenuTile(
+              icon: Icons.logout,
+              title: 'Keluar',
+              danger: true,
+              onTap: () => _confirmLogout(context),
+            ),
           ),
         ],
       ),
@@ -146,7 +172,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     }
   }
 
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -175,6 +201,7 @@ class _MenuTile extends StatelessWidget {
     required this.title,
     required this.onTap,
     this.subtitle,
+    this.color = AppColors.primary,
     this.danger = false,
   });
 
@@ -182,50 +209,42 @@ class _MenuTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
+  final Color color;
   final bool danger;
 
   @override
   Widget build(BuildContext context) {
-    final color = danger ? AppColors.expense : AppColors.primary;
+    final tint = danger ? AppColors.expense : color;
 
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Row(
-            children: [
-              GriviIconBadge.material(icon, color: color),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: danger ? AppColors.expense : AppColors.textPrimary,
-                      ),
-                    ),
-                    if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                  ],
+    return GriviCard(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      radius: 16,
+      child: Row(
+        children: [
+          GriviIconBadge.material(icon, color: tint),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: danger ? AppColors.expense : AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              if (!danger) const Icon(Icons.chevron_right, color: AppColors.textMuted),
-            ],
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                  ),
+              ],
+            ),
           ),
-        ),
+          if (!danger) const Icon(Icons.chevron_right, color: AppColors.textMuted),
+        ],
       ),
     );
   }

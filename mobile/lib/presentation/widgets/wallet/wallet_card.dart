@@ -2,31 +2,39 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_icons.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/currency_formatter.dart';
 import '../../../data/models/wallet_model.dart';
 import '../common/grivi_icon_badge.dart';
+import '../common/grivi_motion.dart';
 
 class WalletCard extends StatelessWidget {
-  const WalletCard({super.key, required this.wallet, this.onTap, this.width});
+  const WalletCard({
+    super.key,
+    required this.wallet,
+    this.onTap,
+    this.width,
+    this.hidden = false,
+  });
 
   final WalletModel wallet;
   final VoidCallback? onTap;
   final double? width;
 
+  /// Mode "sembunyikan saldo" dari Beranda.
+  final bool hidden;
+
   @override
   Widget build(BuildContext context) {
     final color = hexToColor(wallet.color);
 
-    return InkWell(
+    return GriviPressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
         width: width,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.28)),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withValues(alpha: 0.32)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,10 +64,9 @@ class WalletCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            Text(
-              CurrencyFormatter.formatSigned(wallet.balance),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            AnimatedMoney(
+              value: wallet.balance,
+              hidden: hidden,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,

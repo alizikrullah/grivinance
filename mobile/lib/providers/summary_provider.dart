@@ -18,17 +18,33 @@ final selectedYearProvider = StateProvider<int>((ref) => DateTime.now().year);
 /// Bulanan — kalau state-nya lokal per tab, pindah tab terasa seperti ke-reset.
 final summaryTypeProvider = StateProvider<TxType>((ref) => TxType.expense);
 
+/// Tab yang aktif di layar Grafik, supaya kartu di Beranda bisa langsung
+/// membuka tab Bulanan.
+final chartTabProvider = StateProvider<int>((ref) => 0);
+
 final dailySummaryProvider = FutureProvider<PeriodSummary>((ref) {
   final date = ref.watch(selectedDateProvider);
-  return ref.watch(summaryRepositoryProvider).daily(date);
+  return whenSignedIn(ref, () => ref.read(summaryRepositoryProvider).daily(date));
 });
 
 final monthlySummaryProvider = FutureProvider<PeriodSummary>((ref) {
   final month = ref.watch(selectedMonthProvider);
-  return ref.watch(summaryRepositoryProvider).monthly(month.year, month.month);
+  return whenSignedIn(
+    ref,
+    () => ref.read(summaryRepositoryProvider).monthly(month.year, month.month),
+  );
 });
 
 final yearlySummaryProvider = FutureProvider<YearlySummary>((ref) {
   final year = ref.watch(selectedYearProvider);
-  return ref.watch(summaryRepositoryProvider).yearly(year);
+  return whenSignedIn(ref, () => ref.read(summaryRepositoryProvider).yearly(year));
+});
+
+/// Ringkasan bulan berjalan buat Beranda — lepas dari bulan yang dipilih di Grafik.
+final thisMonthSummaryProvider = FutureProvider<PeriodSummary>((ref) {
+  final now = DateTime.now();
+  return whenSignedIn(
+    ref,
+    () => ref.read(summaryRepositoryProvider).monthly(now.year, now.month),
+  );
 });

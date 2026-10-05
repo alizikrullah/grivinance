@@ -33,7 +33,9 @@ class GriviButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
-                Text(label),
+                // Tombol sempit (misal 200 px di state kosong) + huruf sistem
+                // yang diperbesar: label terpotong rapi, bukan meluber.
+                Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
               ],
             ),
     );

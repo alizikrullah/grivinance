@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../data/models/category_model.dart';
 import '../../../data/models/summary_model.dart';
@@ -10,29 +9,55 @@ import '../../../providers/summary_provider.dart';
 import '../../widgets/chart/donut_chart_widget.dart';
 import '../../widgets/chart/yearly_bar_chart_widget.dart';
 import '../../widgets/common/grivi_async_view.dart';
+import '../../widgets/common/grivi_motion.dart';
+import '../../widgets/common/grivi_month_picker.dart';
 
-class ChartScreen extends StatelessWidget {
+/// Tab-nya dikendalikan [chartTabProvider], supaya kartu Pemasukan/Pengeluaran
+/// di Beranda bisa langsung membuka tab Bulanan.
+class ChartScreen extends ConsumerStatefulWidget {
   const ChartScreen({super.key});
 
   @override
+  ConsumerState<ChartScreen> createState() => _ChartScreenState();
+}
+
+class _ChartScreenState extends ConsumerState<ChartScreen> with SingleTickerProviderStateMixin {
+  late final TabController _tabs = TabController(
+    length: 3,
+    vsync: this,
+    initialIndex: ref.read(chartTabProvider),
+  )..addListener(() => ref.read(chartTabProvider.notifier).state = _tabs.index);
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Grafik'),
-          bottom: const TabBar(
-            indicatorColor: AppColors.primary,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textMuted,
-            tabs: [
-              Tab(text: 'Harian'),
-              Tab(text: 'Bulanan'),
-              Tab(text: 'Tahunan'),
-            ],
-          ),
+    ref.listen<int>(chartTabProvider, (_, next) {
+      if (_tabs.index != next) _tabs.animateTo(next);
+    });
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Grafik'),
+        bottom: TabBar(
+          controller: _tabs,
+          indicatorColor: AppColors.primary,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textMuted,
+          tabs: const [
+            Tab(text: 'Harian'),
+            Tab(text: 'Bulanan'),
+            Tab(text: 'Tahunan'),
+          ],
         ),
-        body: const TabBarView(children: [_DailyTab(), _MonthlyTab(), _YearlyTab()]),
+      ),
+      body: TabBarView(
+        controller: _tabs,
+        children: const [_DailyTab(), _MonthlyTab(), _YearlyTab()],
       ),
     );
   }
@@ -47,10 +72,15 @@ class _DailyTab extends ConsumerWidget {
     final summary = ref.watch(dailySummaryProvider);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       children: [
         _PeriodPicker(
           label: DateFormatter.full(date),
+          onPrevious: () => ref.read(selectedDateProvider.notifier).state = date.subtract(
+            const Duration(days: 1),
+          ),
+          onNext: () =>
+              ref.read(selectedDateProvider.notifier).state = date.add(const Duration(days: 1)),
           onTap: () async {
             final picked = await showDatePicker(
               context: context,
@@ -58,9 +88,7 @@ class _DailyTab extends ConsumerWidget {
               firstDate: DateTime(2020),
               lastDate: DateTime(2100),
             );
-            if (picked != null) {
-              ref.read(selectedDateProvider.notifier).state = picked;
-            }
+            if (picked != null) ref.read(selectedDateProvider.notifier).state = picked;
           },
         ),
         const SizedBox(height: 16),
@@ -82,23 +110,21 @@ class _MonthlyTab extends ConsumerWidget {
     final month = ref.watch(selectedMonthProvider);
     final summary = ref.watch(monthlySummaryProvider);
 
+    void shift(int delta) => ref.read(selectedMonthProvider.notifier).state = DateTime(
+      month.year,
+      month.month + delta,
+    );
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       children: [
         _PeriodPicker(
           label: DateFormatter.monthYear(month),
+          onPrevious: () => shift(-1),
+          onNext: () => shift(1),
           onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: month,
-              firstDate: DateTime(2020),
-              lastDate: DateTime(2100),
-              initialDatePickerMode: DatePickerMode.year,
-              helpText: 'Pilih bulan',
-            );
-            if (picked != null) {
-              ref.read(selectedMonthProvider.notifier).state = picked;
-            }
+            final picked = await showGriviMonthPicker(context, initial: month);
+            if (picked != null) ref.read(selectedMonthProvider.notifier).state = picked;
           },
         ),
         const SizedBox(height: 16),
@@ -121,30 +147,14 @@ class _YearlyTab extends ConsumerWidget {
     final summary = ref.watch(yearlySummaryProvider);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: () => ref.read(selectedYearProvider.notifier).state = year - 1,
-            ),
-            SizedBox(
-              width: 90,
-              child: Text(
-                '$year',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () => ref.read(selectedYearProvider.notifier).state = year + 1,
-            ),
-          ],
+        _PeriodPicker(
+          label: '$year',
+          onPrevious: () => ref.read(selectedYearProvider.notifier).state = year - 1,
+          onNext: () => ref.read(selectedYearProvider.notifier).state = year + 1,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         GriviAsyncView<YearlySummary>(
           value: summary,
           onRetry: () => ref.invalidate(yearlySummaryProvider),
@@ -263,18 +273,18 @@ class _TotalCard extends StatelessWidget {
     // donut. Tanpa beda tampilan, kartunya tidak terbaca sebagai tombol.
     final dim = onTap != null && !selected;
 
-    return InkWell(
+    return GriviPressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: selected ? color : Colors.transparent, width: 1.5),
         ),
-        child: Opacity(
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 180),
           opacity: dim ? 0.5 : 1,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,10 +303,8 @@ class _TotalCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                CurrencyFormatter.format(amount),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              AnimatedMoney(
+                value: amount,
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: color),
               ),
             ],
@@ -307,33 +315,50 @@ class _TotalCard extends StatelessWidget {
   }
 }
 
+/// Label periode dengan panah mundur/maju; ketuk labelnya buat memilih langsung.
 class _PeriodPicker extends StatelessWidget {
-  const _PeriodPicker({required this.label, required this.onTap});
+  const _PeriodPicker({
+    required this.label,
+    required this.onPrevious,
+    required this.onNext,
+    this.onTap,
+  });
 
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.event, size: 19, color: AppColors.textMuted),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          IconButton(icon: const Icon(Icons.chevron_left), onPressed: onPrevious),
+          Expanded(
+            child: GriviPressable(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (onTap != null) ...[
+                      const Icon(Icons.event, size: 17, color: AppColors.textMuted),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
             ),
-            const Icon(Icons.expand_more, color: AppColors.textMuted),
-          ],
-        ),
+          ),
+          IconButton(icon: const Icon(Icons.chevron_right), onPressed: onNext),
+        ],
       ),
     );
   }

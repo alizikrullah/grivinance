@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_icons.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -13,15 +13,24 @@ import '../../../data/models/wallet_model.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/transaction_provider.dart';
 import '../../../providers/wallet_provider.dart';
+import '../../widgets/common/grivi_async_view.dart';
 import '../../widgets/common/grivi_button.dart';
 import '../../widgets/common/grivi_error_banner.dart';
 import '../../widgets/common/grivi_icon_badge.dart';
+import '../../widgets/common/grivi_motion.dart';
 import '../../widgets/common/grivi_text_field.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
-  const TransactionFormScreen({super.key, this.transactionId});
+  const TransactionFormScreen({
+    super.key,
+    this.transactionId,
+    this.initialType,
+    this.initialWalletId,
+  });
 
   final String? transactionId;
+  final TxType? initialType;
+  final String? initialWalletId;
 
   @override
   ConsumerState<TransactionFormScreen> createState() => _TransactionFormScreenState();
@@ -30,10 +39,12 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
 class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
+  final _feeController = TextEditingController();
   final _noteController = TextEditingController();
 
-  TxType _type = TxType.expense;
-  String? _walletId;
+  late TxType _type = widget.initialType ?? TxType.expense;
+  late String? _walletId = widget.initialWalletId;
+  String? _toWalletId;
   String? _categoryId;
   DateTime _date = DateTime.now();
 
@@ -42,10 +53,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   bool _prefilled = false;
 
   bool get _isEdit => widget.transactionId != null;
+  bool get _isTransfer => _type == TxType.transfer;
 
   @override
   void dispose() {
     _amountController.dispose();
+    _feeController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -55,9 +68,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _prefilled = true;
     _type = tx.type;
     _walletId = tx.walletId;
+    _toWalletId = tx.toWalletId;
     _categoryId = tx.categoryId;
     _date = tx.date.toLocal();
-    _amountController.text = tx.amount.toStringAsFixed(0);
+    _amountController.text = CurrencyFormatter.formatInput(tx.amount);
+    _feeController.text = CurrencyFormatter.formatInput(tx.fee ?? 0);
     _noteController.text = tx.note ?? '';
   }
 
@@ -86,15 +101,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     });
   }
 
+  String? _missingChoice() {
+    if (_walletId == null) return _isTransfer ? 'Wallet asal wajib dipilih' : 'Wallet wajib dipilih';
+    if (_isTransfer) {
+      if (_toWalletId == null) return 'Wallet tujuan wajib dipilih';
+      if (_toWalletId == _walletId) return 'Wallet asal dan tujuan tidak boleh sama';
+    } else if (_categoryId == null) {
+      return 'Kategori wajib dipilih';
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_walletId == null) {
-      setState(() => _error = 'Wallet wajib dipilih');
-      return;
-    }
-    if (_categoryId == null) {
-      setState(() => _error = 'Kategori wajib dipilih');
+    final missing = _missingChoice();
+    if (missing != null) {
+      setState(() => _error = missing);
       return;
     }
 
@@ -103,29 +126,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       _error = null;
     });
 
+    final input = TransactionInput(
+      type: _type,
+      walletId: _walletId!,
+      toWalletId: _isTransfer ? _toWalletId : null,
+      categoryId: _isTransfer ? null : _categoryId,
+      amount: CurrencyFormatter.parseInput(_amountController.text),
+      fee: _isTransfer ? CurrencyFormatter.parseInput(_feeController.text) : null,
+      date: _date,
+      note: _noteController.text,
+    );
+
     try {
       final notifier = ref.read(transactionsProvider.notifier);
-      final amount = CurrencyFormatter.parseInput(_amountController.text);
-
       if (_isEdit) {
-        await notifier.edit(
-          id: widget.transactionId!,
-          walletId: _walletId!,
-          categoryId: _categoryId!,
-          type: _type,
-          amount: amount,
-          date: _date,
-          note: _noteController.text,
-        );
+        await notifier.edit(widget.transactionId!, input);
       } else {
-        await notifier.create(
-          walletId: _walletId!,
-          categoryId: _categoryId!,
-          type: _type,
-          amount: amount,
-          date: _date,
-          note: _noteController.text,
-        );
+        await notifier.create(input);
       }
       if (mounted) context.pop();
     } catch (e) {
@@ -137,24 +154,45 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final wallets = ref.watch(walletsProvider).value ?? const <WalletModel>[];
-    final categories = ref.watch(categoriesByTypeProvider(_type));
-
+    // Prefill DULU, baru ambil daftar kategori. Kebalikannya bikin daftar
+    // diambil pakai tipe default (pengeluaran), dan kategori asli transaksi
+    // pemasukan langsung dianggap nggak valid lalu dikosongkan (BUG-7).
     if (_isEdit) {
       final detail = ref.watch(transactionDetailProvider(widget.transactionId!));
-      final tx = detail.value;
-      if (tx != null) _prefill(tx);
+      final tx = detail.valueOrNull;
+      if (tx == null) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Edit transaksi')),
+          body: GriviAsyncView<TransactionModel>(
+            value: detail,
+            onRetry: () => ref.invalidate(transactionDetailProvider(widget.transactionId!)),
+            builder: (_) => const SizedBox.shrink(),
+          ),
+        );
+      }
+      _prefill(tx);
     }
 
+    final wallets = ref.watch(walletsProvider).valueOrNull ?? const <WalletModel>[];
+    final categoriesState = ref.watch(categoriesProvider);
+    final categories = ref.watch(categoriesByTypeProvider(_type));
+
     // Wallet pertama dipilih otomatis supaya user nggak perlu satu tap ekstra.
-    if (_walletId == null && wallets.isNotEmpty) {
-      _walletId = wallets.first.id;
-    }
-    // Kategori direset kalau tipenya nggak cocok lagi — backend nolak (422)
-    // kalau kategori expense dipakai di transaksi income.
-    if (_categoryId != null && !categories.any((c) => c.id == _categoryId)) {
+    if (_walletId == null && wallets.isNotEmpty) _walletId = wallets.first.id;
+
+    // Kategori cuma direset kalau daftarnya sudah selesai dimuat dan memang
+    // nggak cocok — daftar yang masih kosong karena loading bukan alasan.
+    if (categoriesState.hasValue &&
+        _categoryId != null &&
+        !categories.any((c) => c.id == _categoryId)) {
       _categoryId = null;
     }
+
+    final accent = switch (_type) {
+      TxType.expense => AppColors.expense,
+      TxType.income => AppColors.income,
+      TxType.transfer => AppColors.transfer,
+    };
 
     return Scaffold(
       appBar: AppBar(title: Text(_isEdit ? 'Edit transaksi' : 'Transaksi baru')),
@@ -162,89 +200,99 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
-              SegmentedButton<TxType>(
-                segments: TxType.values
-                    .map((t) => ButtonSegment(value: t, label: Text(t.label)))
-                    .toList(),
-                selected: {_type},
-                onSelectionChanged: (value) => setState(() {
-                  _type = value.first;
+              _TypeSelector(
+                selected: _type,
+                onChanged: (type) => setState(() {
+                  _type = type;
                   _categoryId = null;
+                  _error = null;
                 }),
-                style: SegmentedButton.styleFrom(
-                  backgroundColor: AppColors.surfaceVariant,
-                  foregroundColor: AppColors.textSecondary,
-                  selectedBackgroundColor: _type == TxType.income
-                      ? AppColors.income
-                      : AppColors.expense,
-                  selectedForegroundColor: Colors.white,
-                  side: BorderSide.none,
-                ),
               ),
+              const SizedBox(height: 16),
+              _AmountField(controller: _amountController, color: accent, autofocus: !_isEdit),
               const SizedBox(height: 20),
-              GriviTextField(
-                controller: _amountController,
-                label: 'Jumlah',
-                hint: '0',
-                icon: Icons.payments_outlined,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  final amount = CurrencyFormatter.parseInput(value ?? '');
-                  if (amount <= 0) return 'Jumlah harus lebih dari 0';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 18),
-              _FieldLabel('Wallet'),
-              const SizedBox(height: 8),
               if (wallets.isEmpty)
                 const Text(
                   'Belum ada wallet. Tambah wallet dulu di menu Akun.',
                   style: TextStyle(color: AppColors.warning, fontSize: 13),
                 )
-              else
+              else if (_isTransfer) ...[
+                if (wallets.length < 2)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      'Transfer butuh minimal 2 wallet.',
+                      style: TextStyle(color: AppColors.warning, fontSize: 13),
+                    ),
+                  ),
+                const _FieldLabel('Dari wallet'),
+                const SizedBox(height: 8),
+                _WalletChips(
+                  wallets: wallets,
+                  selectedId: _walletId,
+                  onSelected: (id) => setState(() {
+                    _walletId = id;
+                    if (_toWalletId == id) _toWalletId = null;
+                  }),
+                ),
+                const SizedBox(height: 18),
+                const _FieldLabel('Ke wallet'),
+                const SizedBox(height: 8),
+                _WalletChips(
+                  wallets: wallets.where((w) => w.id != _walletId).toList(),
+                  selectedId: _toWalletId,
+                  onSelected: (id) => setState(() => _toWalletId = id),
+                ),
+                const SizedBox(height: 18),
+                GriviTextField(
+                  controller: _feeController,
+                  label: 'Biaya admin (opsional)',
+                  hint: '0',
+                  icon: Icons.receipt_long_outlined,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [RupiahInputFormatter()],
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 6, left: 4),
+                  child: Text(
+                    'Dicatat sebagai pengeluaran "Biaya Admin" dari wallet asal.',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  ),
+                ),
+              ] else ...[
+                const _FieldLabel('Wallet'),
+                const SizedBox(height: 8),
+                _WalletChips(
+                  wallets: wallets,
+                  selectedId: _walletId,
+                  onSelected: (id) => setState(() => _walletId = id),
+                ),
+                const SizedBox(height: 18),
+                const _FieldLabel('Kategori'),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: wallets
-                      .map(
-                        (wallet) => _SelectChip(
-                          label: wallet.name,
-                          iconName: wallet.icon,
-                          color: hexToColor(wallet.color),
-                          selected: _walletId == wallet.id,
-                          onTap: () => setState(() => _walletId = wallet.id),
-                        ),
-                      )
-                      .toList(),
-                ),
-              const SizedBox(height: 18),
-              _FieldLabel('Kategori'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: categories
-                    .map(
-                      (category) => _SelectChip(
+                  children: [
+                    for (final category in categories)
+                      _SelectChip(
                         label: category.name,
                         iconName: category.icon,
                         color: hexToColor(category.color),
                         selected: _categoryId == category.id,
                         onTap: () => setState(() => _categoryId = category.id),
                       ),
-                    )
-                    .toList(),
-              ),
+                    _AddChip(onTap: () => context.push(AppRoutes.categoryNew)),
+                  ],
+                ),
+              ],
               const SizedBox(height: 18),
-              _FieldLabel('Tanggal'),
+              const _FieldLabel('Tanggal'),
               const SizedBox(height: 8),
-              InkWell(
+              GriviPressable(
                 onTap: _pickDate,
-                borderRadius: BorderRadius.circular(14),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
@@ -255,7 +303,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     children: [
                       const Icon(Icons.event, size: 20, color: AppColors.textMuted),
                       const SizedBox(width: 12),
-                      Text('${DateFormatter.full(_date)} · ${DateFormatter.time(_date)}'),
+                      Expanded(
+                        child: Text(
+                          '${DateFormatter.full(_date)} · ${DateFormatter.time(_date)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -281,6 +335,140 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Tiga pilihan tipe dengan warnanya masing-masing.
+class _TypeSelector extends StatelessWidget {
+  const _TypeSelector({required this.selected, required this.onChanged});
+
+  final TxType selected;
+  final ValueChanged<TxType> onChanged;
+
+  static Color _colorOf(TxType type) => switch (type) {
+    TxType.expense => AppColors.expense,
+    TxType.income => AppColors.income,
+    TxType.transfer => AppColors.transfer,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          for (final type in TxType.values)
+            Expanded(
+              child: GriviPressable(
+                onTap: () => onChanged(type),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: type == selected ? _colorOf(type) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    type.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                      color: type == selected
+                          ? GriviIconBadge.inkFor(_colorOf(type))
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Nominal besar di tengah, berpemisah ribuan selagi diketik.
+class _AmountField extends StatelessWidget {
+  const _AmountField({required this.controller, required this.color, required this.autofocus});
+
+  final TextEditingController controller;
+  final Color color;
+
+  /// Transaksi baru langsung siap diketik; waktu edit, keyboard nggak perlu muncul.
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Jumlah', style: TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+          TextFormField(
+            controller: controller,
+            autofocus: autofocus,
+            keyboardType: TextInputType.number,
+            inputFormatters: [RupiahInputFormatter()],
+            style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: color),
+            cursorColor: color,
+            decoration: InputDecoration(
+              prefixText: 'Rp ',
+              prefixStyle: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: color),
+              hintText: '0',
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 6),
+            ),
+            validator: (value) => CurrencyFormatter.parseInput(value ?? '') <= 0
+                ? 'Jumlah harus lebih dari 0'
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WalletChips extends StatelessWidget {
+  const _WalletChips({
+    required this.wallets,
+    required this.selectedId,
+    required this.onSelected,
+  });
+
+  final List<WalletModel> wallets;
+  final String? selectedId;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final wallet in wallets)
+          _SelectChip(
+            label: wallet.name,
+            iconName: wallet.icon,
+            color: hexToColor(wallet.color),
+            selected: selectedId == wallet.id,
+            onTap: () => onSelected(wallet.id),
+          ),
+      ],
     );
   }
 }
@@ -320,10 +508,10 @@ class _SelectChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GriviPressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
@@ -343,6 +531,34 @@ class _SelectChip extends StatelessWidget {
                 color: selected ? AppColors.textPrimary : AppColors.textSecondary,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddChip extends StatelessWidget {
+  const _AddChip({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GriviPressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.surfaceVariant, width: 1.5),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add, size: 18, color: AppColors.primary),
+            SizedBox(width: 6),
+            Text('Kategori baru', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
           ],
         ),
       ),

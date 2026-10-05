@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../data/models/summary_model.dart';
 
@@ -46,7 +47,7 @@ class YearlyBarChartWidget extends StatelessWidget {
                   getTooltipColor: (_) => AppColors.surfaceVariant,
                   getTooltipItem: (group, _, rod, _) => BarTooltipItem(
                     '${DateFormatter.monthNames[group.x]}\n'
-                    '${_compact(rod.toY)}',
+                    'Rp ${CurrencyFormatter.compact(rod.toY)}',
                     const TextStyle(color: AppColors.textPrimary, fontSize: 12),
                   ),
                 ),
@@ -66,7 +67,7 @@ class YearlyBarChartWidget extends StatelessWidget {
                     showTitles: true,
                     reservedSize: 46,
                     getTitlesWidget: (value, _) => Text(
-                      _compact(value),
+                      CurrencyFormatter.compact(value),
                       style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
                     ),
                   ),
@@ -128,13 +129,6 @@ class YearlyBarChartWidget extends StatelessWidget {
     );
   }
 
-  /// Sumbu Y pakai singkatan, kalau nggak angkanya kepanjangan dan kepotong.
-  static String _compact(double value) {
-    if (value >= 1000000000) return '${(value / 1000000000).toStringAsFixed(1)}M';
-    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}jt';
-    if (value >= 1000) return '${(value / 1000).toStringAsFixed(0)}rb';
-    return value.toStringAsFixed(0);
-  }
 }
 
 class _LegendDot extends StatelessWidget {

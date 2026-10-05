@@ -9,6 +9,9 @@ class AppColors {
   static const Color primary = Color(0xFF10B981);
   static const Color primaryDark = Color(0xFF059669);
 
+  /// Tinta di atas latar hijau: tombol primer, FAB, kartu total saldo.
+  static const Color onPrimary = Color(0xFF04231A);
+
   static const Color background = Color(0xFF0D0D0D);
   static const Color surface = Color(0xFF1C1C1E);
   static const Color surfaceVariant = Color(0xFF2C2C2E);
@@ -20,6 +23,10 @@ class AppColors {
   static const Color income = Color(0xFF10B981);
   static const Color expense = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
+
+  /// Transfer antar wallet: bukan uang masuk, bukan uang keluar — jadi bukan
+  /// hijau, bukan merah.
+  static const Color transfer = Color(0xFF60A5FA);
 }
 
 class AppTheme {
@@ -32,7 +39,7 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
-        onPrimary: Color(0xFF04231A),
+        onPrimary: AppColors.onPrimary,
         secondary: AppColors.primaryDark,
         onSecondary: AppColors.textPrimary,
         surface: AppColors.surface,
@@ -75,7 +82,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: const Color(0xFF04231A),
+          foregroundColor: AppColors.onPrimary,
           disabledBackgroundColor: AppColors.surfaceVariant,
           disabledForegroundColor: AppColors.textMuted,
           minimumSize: const Size.fromHeight(52),
