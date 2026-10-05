@@ -14,6 +14,9 @@ const expense: Preset[] = [
   { id: "cat_hiburan", name: "Hiburan", icon: "movie", color: "#EC4899" },
   { id: "cat_pendidikan", name: "Pendidikan", icon: "school", color: "#8B5CF6" },
   { id: "cat_cicilan", name: "Cicilan", icon: "credit_card", color: "#F43F5E" },
+  // Tempat biaya admin transfer antar wallet dicatat otomatis (REQ-5).
+  // Id-nya dirujuk FEE_CATEGORY_ID di transaction.service.ts.
+  { id: "cat_biaya_admin", name: "Biaya Admin", icon: "receipt_long", color: "#78716C" },
   { id: "cat_lainnya_expense", name: "Lainnya", icon: "more_horiz", color: "#6B7280" },
 ];
 

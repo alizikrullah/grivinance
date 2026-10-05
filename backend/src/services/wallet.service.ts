@@ -10,26 +10,29 @@ export type WalletInput = {
   color: string;
 };
 
-type WalletRow = { balance: unknown; _count?: { transactions: number } } & Record<
-  string,
-  unknown
->;
+type WalletRow = {
+  balance: unknown;
+  _count?: { transactions: number; transfersIn: number };
+} & Record<string, unknown>;
 
 /**
  * transactionCount ikut dikirim supaya Flutter tahu boleh menampilkan field
  * saldo awal atau tidak, tanpa perlu query transaksi terpisah cuma buat
- * menghitung.
+ * menghitung. Transfer masuk ikut dihitung: dia juga mengubah saldo.
  */
 function toDto(wallet: WalletRow) {
   const { _count, ...rest } = wallet;
   return {
     ...rest,
     balance: money(wallet.balance as string),
-    transactionCount: _count?.transactions ?? 0,
+    transactionCount: (_count?.transactions ?? 0) + (_count?.transfersIn ?? 0),
   };
 }
 
-const withCount = { _count: { select: { transactions: true } } } as const;
+const withCount = { _count: { select: { transactions: true, transfersIn: true } } } as const;
+
+/** Semua baris yang mengubah saldo wallet ini: miliknya sendiri + transfer yang masuk. */
+const touching = (id: string) => ({ OR: [{ walletId: id }, { toWalletId: id }] });
 
 async function ownedWallet(userId: string, id: string) {
   const wallet = await prisma.wallet.findFirst({ where: { id, userId } });
@@ -48,7 +51,14 @@ export async function list(userId: string) {
 
 export async function create(userId: string, input: WalletInput) {
   const wallet = await prisma.wallet.create({
-    data: { ...input, balance: input.balance ?? "0", userId },
+    data: {
+      name: input.name,
+      type: input.type,
+      icon: input.icon,
+      color: input.color,
+      balance: input.balance ?? "0",
+      userId,
+    },
     include: withCount,
   });
   return toDto(wallet);
@@ -63,7 +73,7 @@ export async function update(userId: string, id: string, input: Partial<WalletIn
   // dipertanggungjawabkan. Dijaga di sini, bukan cuma disembunyikan di UI:
   // kalau hanya klien yang menahan, panggilan API langsung bisa merusak saldo.
   if (input.balance !== undefined) {
-    const used = await prisma.transaction.count({ where: { walletId: id } });
+    const used = await prisma.transaction.count({ where: touching(id) });
     if (used > 0) {
       throw new AppError(
         409,
@@ -82,6 +92,19 @@ export async function update(userId: string, id: string, input: Partial<WalletIn
 
 export async function remove(userId: string, id: string) {
   await ownedWallet(userId, id);
-  // Transaction.wallet pakai onDelete: Cascade, jadi transaksinya ikut kehapus.
+
+  // Menghapus wallet ikut menghapus transaksinya (Cascade). Untuk transfer itu
+  // berarti saldo wallet di seberangnya berubah tanpa catatan yang
+  // menjelaskannya — jadi ditolak, transfernya harus dihapus dulu.
+  const transfers = await prisma.transaction.count({
+    where: { type: "transfer", ...touching(id) },
+  });
+  if (transfers > 0) {
+    throw new AppError(
+      409,
+      `Wallet ini terlibat di ${transfers} transfer. Hapus transfernya dulu supaya saldo wallet lain tetap benar`,
+    );
+  }
+
   await prisma.wallet.delete({ where: { id } });
 }

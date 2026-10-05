@@ -9,19 +9,38 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  password     String   @map("password_enc")
-  name         String
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String    @map("password_enc")
+  name      String
+  nickname  String?
+  phone     String?
+  birthDate DateTime? @map("birth_date") @db.Date
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   wallets       Wallet[]
   categories    Category[]
   transactions  Transaction[]
   refreshTokens RefreshToken[]
+  avatar        UserAvatar?
+  budgets       Budget[]
+  missionClaims MissionClaim[]
+  achievements  UserAchievement[]
 
   @@map("users")
+}
+
+/// Foto profil di tabel sendiri, supaya query user biasa nggak ikut narik blob gambar.
+model UserAvatar {
+  userId    String   @id @map("user_id")
+  data      Bytes
+  mimeType  String   @map("mime_type")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_avatars")
 }
 
 model Wallet {
@@ -36,7 +55,8 @@ model Wallet {
   updatedAt DateTime   @updatedAt @map("updated_at")
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  transactions Transaction[] @relation("WalletTransactions")
+  transfersIn  Transaction[] @relation("WalletTransfersIn")
 
   @@map("wallets")
 }
@@ -59,6 +79,7 @@ model Category {
 
   user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  budgets      Budget[]
 
   @@map("categories")
 }
@@ -68,11 +89,17 @@ enum CategoryType {
   expense
 }
 
+/// income/expense punya kategori. transfer punya toWalletId dan tanpa kategori.
+/// Biaya admin transfer disimpan sebagai baris expense terpisah yang menunjuk
+/// ke transfernya lewat feeForId — dia uang yang beneran keluar, jadi ikut
+/// dihitung di summary dan budget, sementara transfernya sendiri tidak.
 model Transaction {
   id         String          @id @default(cuid())
   userId     String          @map("user_id")
   walletId   String          @map("wallet_id")
-  categoryId String          @map("category_id")
+  toWalletId String?         @map("to_wallet_id")
+  categoryId String?         @map("category_id")
+  feeForId   String?         @unique @map("fee_for_id")
   type       TransactionType
   amount     Decimal         @db.Decimal(15, 2)
   note       String?
@@ -80,12 +107,18 @@ model Transaction {
   createdAt  DateTime        @default(now()) @map("created_at")
   updatedAt  DateTime        @updatedAt @map("updated_at")
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wallet   Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet   Wallet        @relation("WalletTransactions", fields: [walletId], references: [id], onDelete: Cascade)
+  // NoAction, bukan Cascade: wallet yang terlibat transfer ditolak dihapus di
+  // service, supaya saldo wallet di seberangnya nggak jadi nggak bisa dijelaskan.
+  toWallet Wallet?       @relation("WalletTransfersIn", fields: [toWalletId], references: [id], onDelete: NoAction)
+  category Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  feeFor   Transaction?  @relation("TransferFee", fields: [feeForId], references: [id], onDelete: Cascade)
+  fee      Transaction?  @relation("TransferFee")
 
   @@index([userId, date])
   @@index([walletId])
+  @@index([toWalletId])
   @@index([categoryId])
   @@map("transactions")
 }
@@ -93,6 +126,7 @@ model Transaction {
 enum TransactionType {
   income
   expense
+  transfer
 }
 
 model RefreshToken {
@@ -105,4 +139,51 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
+}
+
+/// Budget bulanan per kategori pengeluaran. Satu angka, berlaku tiap bulan
+/// sampai diubah — terpakai dan sisanya dihitung ulang per bulan WIB.
+model Budget {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  categoryId String   @map("category_id")
+  amount     Decimal  @db.Decimal(15, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+  @@map("budgets")
+}
+
+/// Satu baris = satu misi harian yang diklaim. `day` adalah tanggal WIB.
+model MissionClaim {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  mission   String
+  day       DateTime @db.Date
+  xp        Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mission, day])
+  @@map("mission_claims")
+}
+
+/// Lencana yang udah kebuka. Disimpan permanen, jadi tetap ada walau data
+/// yang membukanya nanti dihapus.
+model UserAchievement {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  achievement String
+  xp          Int
+  unlockedAt  DateTime @default(now()) @map("unlocked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievement])
+  @@map("user_achievements")
 }

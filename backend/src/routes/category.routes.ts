@@ -8,7 +8,7 @@ const router = Router();
 router.use(requireAuth);
 
 const rules = [
-  body("name").trim().notEmpty().withMessage("Nama kategori wajib diisi"),
+  body("name").trim().notEmpty().withMessage("Nama kategori wajib diisi").isLength({ max: 40 }),
   body("type").isIn(["income", "expense"]).withMessage("Tipe kategori tidak valid"),
   body("icon").trim().notEmpty().withMessage("Icon wajib diisi"),
   body("color").matches(/^#[0-9A-Fa-f]{6}$/).withMessage("Warna harus format #RRGGBB"),

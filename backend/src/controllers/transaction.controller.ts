@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
+import { matchedData } from "express-validator";
 import * as transactionService from "../services/transaction.service";
 import { ok } from "../utils/response.utils";
+
+const input = (req: Request) =>
+  matchedData(req, { locations: ["body"] }) as transactionService.TransactionInput;
 
 export async function list(req: Request, res: Response) {
   const { page, limit, walletId, categoryId, type, startDate, endDate } = req.query;
@@ -9,7 +13,7 @@ export async function list(req: Request, res: Response) {
     limit: limit ? Number(limit) : undefined,
     walletId: walletId as string | undefined,
     categoryId: categoryId as string | undefined,
-    type: type as "income" | "expense" | undefined,
+    type: type as transactionService.TransactionFilter["type"],
     startDate: startDate as string | undefined,
     endDate: endDate as string | undefined,
   });
@@ -21,11 +25,11 @@ export async function detail(req: Request, res: Response) {
 }
 
 export async function create(req: Request, res: Response) {
-  return ok(res, "Transaksi ditambahkan", await transactionService.create(req.user!.id, req.body), 201);
+  return ok(res, "Transaksi ditambahkan", await transactionService.create(req.user!.id, input(req)), 201);
 }
 
 export async function update(req: Request, res: Response) {
-  return ok(res, "Transaksi diperbarui", await transactionService.update(req.user!.id, String(req.params.id), req.body));
+  return ok(res, "Transaksi diperbarui", await transactionService.update(req.user!.id, String(req.params.id), input(req)));
 }
 
 export async function remove(req: Request, res: Response) {

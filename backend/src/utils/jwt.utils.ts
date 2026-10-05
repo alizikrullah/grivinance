@@ -10,7 +10,9 @@ function required(key: string): string {
 const ACCESS_SECRET = required("JWT_ACCESS_SECRET");
 const REFRESH_SECRET = required("JWT_REFRESH_SECRET");
 const ACCESS_EXPIRES = (process.env.JWT_ACCESS_EXPIRES_IN ?? "15m") as SignOptions["expiresIn"];
-const REFRESH_EXPIRES = (process.env.JWT_REFRESH_EXPIRES_IN ?? "7d") as SignOptions["expiresIn"];
+// Dihitung ulang tiap refresh (rotasi, REQ-7), jadi ini batas nganggur, bukan
+// batas sejak login: user cuma diminta login lagi kalau segini lama nggak buka app.
+const REFRESH_EXPIRES = (process.env.JWT_REFRESH_EXPIRES_IN ?? "90d") as SignOptions["expiresIn"];
 
 export type TokenPayload = { sub: string };
 

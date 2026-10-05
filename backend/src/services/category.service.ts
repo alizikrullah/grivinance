@@ -9,6 +9,14 @@ export type CategoryInput = {
   color: string;
 };
 
+/** Pemakaian dihitung dari transaksi user ini saja — preset dipakai semua user. */
+const usageOf = (userId: string) =>
+  ({ _count: { select: { transactions: { where: { userId } } } } }) as const;
+
+function toDto({ _count, ...category }: { _count: { transactions: number } } & Record<string, unknown>) {
+  return { ...category, transactionCount: _count.transactions };
+}
+
 /** Preset global (userId null) tidak boleh disentuh siapa pun. */
 async function editableCategory(userId: string, id: string) {
   const category = await prisma.category.findUnique({ where: { id } });
@@ -19,19 +27,49 @@ async function editableCategory(userId: string, id: string) {
 }
 
 export async function list(userId: string) {
-  return prisma.category.findMany({
+  const categories = await prisma.category.findMany({
     where: { OR: [{ userId: null }, { userId }] },
     orderBy: [{ isDefault: "desc" }, { name: "asc" }],
+    include: usageOf(userId),
   });
+  return categories.map(toDto);
 }
 
 export async function create(userId: string, input: CategoryInput) {
-  return prisma.category.create({ data: { ...input, userId, isDefault: false } });
+  const category = await prisma.category.create({
+    data: { name: input.name, type: input.type, icon: input.icon, color: input.color, userId, isDefault: false },
+    include: usageOf(userId),
+  });
+  return toDto(category);
 }
 
-export async function update(userId: string, id: string, input: Partial<CategoryInput>) {
-  await editableCategory(userId, id);
-  return prisma.category.update({ where: { id }, data: input });
+export async function update(userId: string, id: string, input: CategoryInput) {
+  const category = await editableCategory(userId, id);
+
+  // Aturan "tipe kategori = tipe transaksi" dijaga waktu transaksi dibuat.
+  // Kalau tipe kategori yang udah dipakai boleh diganti, semua transaksinya
+  // jadi melanggar aturan itu sekaligus (BUG-10). Pola yang sama dengan saldo
+  // awal wallet: boleh selama belum dipakai.
+  const typeChanged = input.type !== category.type;
+  if (typeChanged) {
+    const used = await prisma.transaction.count({ where: { categoryId: id } });
+    if (used > 0) {
+      throw new AppError(409, `Kategori sudah dipakai di ${used} transaksi, tipenya tidak bisa diubah`);
+    }
+  }
+
+  const updated = await prisma.$transaction(async (db) => {
+    // Budget cuma untuk kategori pengeluaran; jadi pemasukan = budgetnya gugur.
+    if (typeChanged && input.type === "income") {
+      await db.budget.deleteMany({ where: { categoryId: id } });
+    }
+    return db.category.update({
+      where: { id },
+      data: { name: input.name, type: input.type, icon: input.icon, color: input.color },
+      include: usageOf(userId),
+    });
+  });
+  return toDto(updated);
 }
 
 export async function remove(userId: string, id: string) {

@@ -3,9 +3,17 @@ import { Prisma } from "../generated/prisma/client";
 import { money } from "../utils/response.utils";
 import { wibDayRange, wibMonthOf, wibMonthRange, wibYearRange, type DateRange } from "../utils/date.utils";
 
+/**
+ * Transfer cuma memindahkan uang antar wallet milik user sendiri — bukan
+ * pemasukan, bukan pengeluaran. Saringannya eksplisit di sini supaya tidak
+ * bergantung pada urutan enum. Biaya admin transfer tetap ikut: dia baris
+ * expense biasa karena uangnya memang keluar.
+ */
+const countedTypes = { in: ["income", "expense"] as Array<"income" | "expense"> };
+
 /** Total income/expense + rincian per kategori dalam satu rentang waktu. */
 async function breakdown(userId: string, range: DateRange) {
-  const where = { userId, date: range };
+  const where = { userId, date: range, type: countedTypes };
 
   const [grouped, totals] = await Promise.all([
     prisma.transaction.groupBy({
@@ -16,8 +24,13 @@ async function breakdown(userId: string, range: DateRange) {
     prisma.transaction.groupBy({ by: ["type"], where, _sum: { amount: true } }),
   ]);
 
+  // income/expense selalu berkategori; saringan null ini cuma buat tipe.
+  const rows = grouped.filter((row) => row.categoryId !== null) as Array<
+    (typeof grouped)[number] & { categoryId: string }
+  >;
+
   const categories = await prisma.category.findMany({
-    where: { id: { in: grouped.map((row) => row.categoryId) } },
+    where: { id: { in: rows.map((row) => row.categoryId) } },
     select: { id: true, name: true, icon: true, color: true },
   });
   const byId = new Map(categories.map((c) => [c.id, c]));
@@ -28,7 +41,7 @@ async function breakdown(userId: string, range: DateRange) {
   return {
     totalIncome: money(sumOf("income")),
     totalExpense: money(sumOf("expense")),
-    byCategory: grouped
+    byCategory: rows
       .map((row) => ({
         categoryId: row.categoryId,
         name: byId.get(row.categoryId)?.name ?? "?",
@@ -51,7 +64,7 @@ export function monthly(userId: string, year: number, month: number) {
 
 export async function yearly(userId: string, year: number) {
   const rows = await prisma.transaction.findMany({
-    where: { userId, date: wibYearRange(year) },
+    where: { userId, date: wibYearRange(year), type: countedTypes },
     select: { type: true, amount: true, date: true },
   });
 

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { query } from "express-validator";
 import * as summaryController from "../controllers/summary.controller";
 import { requireAuth } from "../middlewares/auth.middleware";
-import { validate } from "../middlewares/validate.middleware";
+import { calendarDateRule, validate } from "../middlewares/validate.middleware";
 
 const router = Router();
 router.use(requireAuth);
@@ -11,7 +11,7 @@ const yearRule = query("year").isInt({ min: 2000, max: 2100 }).withMessage("Tahu
 
 router.get(
   "/daily",
-  query("date").matches(/^\d{4}-\d{2}-\d{2}$/).withMessage("Format tanggal harus YYYY-MM-DD"),
+  calendarDateRule(query("date"), "Tanggal"),
   validate,
   summaryController.daily,
 );

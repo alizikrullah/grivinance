@@ -7,6 +7,8 @@ import walletRoutes from "./routes/wallet.routes";
 import categoryRoutes from "./routes/category.routes";
 import transactionRoutes from "./routes/transaction.routes";
 import summaryRoutes from "./routes/summary.routes";
+import budgetRoutes from "./routes/budget.routes";
+import gamificationRoutes from "./routes/gamification.routes";
 import { AppError, fail } from "./utils/response.utils";
 
 const app = express();
@@ -25,12 +27,21 @@ app.use("/api/wallets", walletRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/summary", summaryRoutes);
+app.use("/api/budgets", budgetRoutes);
+app.use("/api/gamification", gamificationRoutes);
 
 app.use((_req: Request, res: Response) => fail(res, 404, "Endpoint tidak ditemukan"));
 
 // Express 5 meneruskan error dari async handler ke sini otomatis.
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof AppError) return fail(res, err.status, err.message);
+
+  // Error dari body-parser (JSON rusak, body kebesaran) udah bawa status 4xx
+  // sendiri. Itu salah klien, bukan server — jangan dijadikan 500.
+  const status = (err as { status?: unknown }).status;
+  if (typeof status === "number" && status >= 400 && status < 500) {
+    return fail(res, status, status === 413 ? "Ukuran data terlalu besar" : "Format request tidak valid");
+  }
 
   console.error(err);
   return fail(res, 500, "Terjadi kesalahan di server");
